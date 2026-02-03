@@ -1,0 +1,28 @@
+# Fider Environment ConfigMap - Base
+# Scenario overlays patch BASE_URL with scenario-specific hostname
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fider-env
+data:
+  # Core configuration
+  HOST_MODE: "single"
+  BASE_URL: "http://demo.localhost:8080"
+  
+  # Database (pointing to postgres service in same namespace)
+  DATABASE_URL: "postgres://fider:fider@postgres:5432/fider?sslmode=disable"
+  
+  # Email disabled for demos
+  EMAIL: "none"
+  EMAIL_NOREPLY: "noreply@northstar.io"
+  
+  # Demo mode
+  DEMO_MODE: "true"
+  SIGNUP_DISABLED: "true"
+  
+  # Blob storage (SQL only for demos)
+  BLOB_STORAGE: "sql"
+  
+  # Logging
+  LOG_LEVEL: "INFO"
+  LOG_CONSOLE: "true"

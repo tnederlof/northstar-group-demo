@@ -1,0 +1,44 @@
+# Shared Gateway for all demo scenarios
+# Routes traffic from *.localhost:8080 to scenario HTTPRoutes
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: fider-demo
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: fider-demo
+  namespace: default
+spec:
+  gatewayClassName: fider-demo
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      hostname: "*.localhost"
+      allowedRoutes:
+        namespaces:
+          from: All
+---
+# NodePort Service to expose the Gateway on port 30080
+# This maps to hostPort 8080 via Kind cluster config
+apiVersion: v1
+kind: Service
+metadata:
+  name: fider-demo-gateway
+  namespace: envoy-gateway-system
+spec:
+  type: NodePort
+  selector:
+    gateway.envoyproxy.io/owning-gateway-name: fider-demo
+    gateway.envoyproxy.io/owning-gateway-namespace: default
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      nodePort: 30080
+      protocol: TCP

@@ -1,0 +1,21 @@
+# Missing Metrics scenario overlay
+# Introduces: Metrics port not exposed, selector mismatch
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: demo-missing-metrics
+
+resources:
+  - ../../../base
+  - httproute.yaml
+  - servicemonitor.yaml
+
+patches:
+  - path: patch-configmap.yaml
+    target:
+      kind: ConfigMap
+      name: fider-env
+  - path: patch-service.yaml
+    target:
+      kind: Service
+      name: fider

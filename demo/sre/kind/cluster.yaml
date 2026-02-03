@@ -1,0 +1,12 @@
+# Kind cluster configuration for SRE demo scenarios
+# Creates a single-node cluster with port mapping for the Gateway
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: fider-demo
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      # Map Gateway NodePort to host port 8080
+      - containerPort: 30080
+        hostPort: 8080
+        protocol: TCP

@@ -1,0 +1,19 @@
+# Patch Service with incorrect metrics label
+# ServiceMonitor expects 'metrics: enabled' but we have 'metrics: disabled'
+apiVersion: v1
+kind: Service
+metadata:
+  name: fider
+  labels:
+    app: fider
+    # BROKEN: Label mismatch with ServiceMonitor
+    metrics: disabled
+spec:
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+    # BROKEN: Metrics port not exposed (commented out)
+    # - name: metrics
+    #   port: 4000
+    #   targetPort: 4000

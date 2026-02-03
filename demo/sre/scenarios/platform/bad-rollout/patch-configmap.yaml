@@ -1,0 +1,10 @@
+# Patch to introduce broken DATABASE_URL
+# The host 'postgres-wrong' does not exist, causing connection failures
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fider-env
+data:
+  BASE_URL: "http://bad-rollout.localhost:8080"
+  # BROKEN: postgres-wrong does not exist
+  DATABASE_URL: "postgres://fider:fider@postgres-wrong:5432/fider?sslmode=disable"

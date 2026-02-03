@@ -1,0 +1,47 @@
+# Fider Deployment - Base (no breakage)
+# Scenario overlays introduce specific breakage via patches
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fider
+  labels:
+    app: fider
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fider
+  template:
+    metadata:
+      labels:
+        app: fider
+    spec:
+      containers:
+        - name: fider
+          image: ghcr.io/warpdotdev/northstar-group-demo-fider:base
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              name: http
+          envFrom:
+            - configMapRef:
+                name: fider-env
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /_health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /_health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 10

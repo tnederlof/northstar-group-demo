@@ -1,0 +1,139 @@
+# Demo Makefile
+# Main entry point for all demo commands
+#
+# Usage: make <target> [SCENARIO=<path>] [KUBE_CONTEXT=<context>]
+
+.DEFAULT_GOAL := help
+
+# Variables
+SCENARIO ?=
+KUBE_CONTEXT ?= kind-fider-demo
+SHELL := /bin/bash
+
+# Paths
+DEMO_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+SHARED_DIR := $(DEMO_DIR)/shared
+SRE_DIR := $(DEMO_DIR)/sre
+ENG_DIR := $(DEMO_DIR)/engineering
+
+# ============================================================================
+# Help
+# ============================================================================
+.PHONY: help
+help: ## Show this help
+	@echo "Northstar Group Demo Commands"
+	@echo ""
+	@echo "Usage: make <target> [SCENARIO=<path>]"
+	@echo ""
+	@echo "Scenario Management:"
+	@grep -E '^(list-|describe-|validate-).*:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-25s %s\n", $$1, $$2}'
+	@echo ""
+	@echo "SRE Track:"
+	@grep -E '^sre-.*:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-25s %s\n", $$1, $$2}'
+	@echo ""
+	@echo "Engineering Track:"
+	@grep -E '^eng-.*:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-25s %s\n", $$1, $$2}'
+
+# ============================================================================
+# Scenario Management
+# ============================================================================
+.PHONY: list-scenarios
+list-scenarios: ## List all available scenarios
+	@$(SHARED_DIR)/scripts/validate-scenarios.sh list
+
+.PHONY: describe-scenario
+describe-scenario: ## Describe a scenario (SCENARIO required)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@$(SHARED_DIR)/scripts/validate-scenarios.sh describe $(SCENARIO)
+
+.PHONY: validate-scenarios
+validate-scenarios: ## Validate all scenario manifests
+	@$(SHARED_DIR)/scripts/validate-scenarios.sh validate
+
+# ============================================================================
+# SRE Track
+# ============================================================================
+.PHONY: sre-prereqs
+sre-prereqs: ## Check SRE track prerequisites
+	@$(SRE_DIR)/scripts/check-prereqs.sh
+
+.PHONY: sre-cluster-up
+sre-cluster-up: ## Create Kind cluster for SRE demos
+	@echo "Creating Kind cluster..."
+	@kind create cluster --config $(SRE_DIR)/kind/cluster.yaml
+
+.PHONY: sre-cluster-down
+sre-cluster-down: ## Delete Kind cluster
+	@echo "Deleting Kind cluster..."
+	@kind delete cluster --name fider-demo
+
+.PHONY: sre-setup
+sre-setup: sre-prereqs sre-cluster-up ## Full SRE setup (prereqs + cluster)
+	@echo "Installing Gateway API and Envoy Gateway..."
+	@kubectl --context=$(KUBE_CONTEXT) apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
+	@echo "SRE environment ready!"
+
+.PHONY: sre-demo
+sre-demo: ## Deploy a scenario (SCENARIO required)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@KUBE_CONTEXT=$(KUBE_CONTEXT) $(SRE_DIR)/scripts/demo.sh up $(SCENARIO)
+
+.PHONY: sre-down
+sre-down: ## Remove a scenario (SCENARIO required)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@KUBE_CONTEXT=$(KUBE_CONTEXT) $(SRE_DIR)/scripts/demo.sh down $(SCENARIO)
+
+.PHONY: sre-reset
+sre-reset: ## Reset a scenario (down + up)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@KUBE_CONTEXT=$(KUBE_CONTEXT) $(SRE_DIR)/scripts/demo.sh reset $(SCENARIO)
+
+.PHONY: sre-teardown-all
+sre-teardown-all: ## Remove all demo namespaces
+	@KUBE_CONTEXT=$(KUBE_CONTEXT) $(SRE_DIR)/scripts/demo.sh down-all
+
+.PHONY: sre-status
+sre-status: ## Show cluster status
+	@kubectl --context=$(KUBE_CONTEXT) get pods -A | grep -E "(demo-|envoy)" || echo "No demo pods running"
+
+# ============================================================================
+# Engineering Track
+# ============================================================================
+.PHONY: eng-prereqs
+eng-prereqs: ## Check Engineering track prerequisites
+	@$(ENG_DIR)/scripts/check-prereqs.sh
+
+.PHONY: eng-edge-up
+eng-edge-up: ## Start Traefik edge proxy
+	@docker compose -f $(ENG_DIR)/compose/edge/docker-compose.yml up -d
+
+.PHONY: eng-edge-down
+eng-edge-down: ## Stop Traefik edge proxy
+	@docker compose -f $(ENG_DIR)/compose/edge/docker-compose.yml down
+
+.PHONY: eng-testdeps-up
+eng-testdeps-up: ## Start test dependencies (postgres, minio)
+	@docker compose -f $(ENG_DIR)/compose/testdeps/docker-compose.yml up -d
+
+.PHONY: eng-testdeps-down
+eng-testdeps-down: ## Stop test dependencies
+	@docker compose -f $(ENG_DIR)/compose/testdeps/docker-compose.yml down -v
+
+.PHONY: eng-scenario-init
+eng-scenario-init: ## Initialize scenario worktree (SCENARIO required)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@$(ENG_DIR)/scripts/worktree.sh init $(SCENARIO)
+
+.PHONY: eng-scenario-reset
+eng-scenario-reset: ## Reset scenario worktree (SCENARIO required)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@$(ENG_DIR)/scripts/worktree.sh reset $(SCENARIO)
+
+.PHONY: eng-scenario-clean
+eng-scenario-clean: ## Remove scenario worktree (SCENARIO required)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@$(ENG_DIR)/scripts/worktree.sh remove $(SCENARIO)
+
+.PHONY: eng-setup
+eng-setup: eng-prereqs eng-edge-up ## Full Engineering setup (prereqs + edge proxy)
+	@echo "Engineering environment ready!"

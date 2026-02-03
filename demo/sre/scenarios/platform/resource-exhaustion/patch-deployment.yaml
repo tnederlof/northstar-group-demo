@@ -1,0 +1,19 @@
+# Patch to set memory limit too low
+# 32Mi is insufficient for Fider, causing OOMKilled
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fider
+spec:
+  template:
+    spec:
+      containers:
+        - name: fider
+          resources:
+            requests:
+              memory: "16Mi"
+              cpu: "50m"
+            limits:
+              # BROKEN: 32Mi is too low, causing OOMKilled
+              memory: "32Mi"
+              cpu: "100m"

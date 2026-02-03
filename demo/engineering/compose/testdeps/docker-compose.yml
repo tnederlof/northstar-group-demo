@@ -1,0 +1,67 @@
+# Test Dependencies for CI/Local Testing
+# Provides PostgreSQL and MinIO for running `make test-server`
+#
+# Usage:
+#   docker compose -f demo/engineering/compose/testdeps/docker-compose.yml up -d
+#
+# Environment variables for tests (set in .test.env or export):
+#   DATABASE_URL=postgres://fider_test:fider_test@localhost:5433/fider_test?sslmode=disable
+#   BLOB_STORAGE=s3
+#   BLOB_STORAGE_S3_ENDPOINT_URL=http://localhost:9000
+#   BLOB_STORAGE_S3_REGION=us-east-1
+#   BLOB_STORAGE_S3_BUCKET=test-bucket
+#   BLOB_STORAGE_S3_ACCESS_KEY_ID=s3user
+#   BLOB_STORAGE_S3_SECRET_ACCESS_KEY=s3user-s3cr3t
+
+services:
+  pgtest:
+    image: postgres:17
+    container_name: fider-pgtest
+    environment:
+      POSTGRES_USER: fider_test
+      POSTGRES_PASSWORD: fider_test
+      POSTGRES_DB: fider_test
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgtest-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fider_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  s3test:
+    image: minio/minio:latest
+    container_name: fider-s3test
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: s3user
+      MINIO_ROOT_PASSWORD: s3user-s3cr3t
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - s3test-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # One-time bucket creation
+  createbucket:
+    image: minio/mc
+    depends_on:
+      s3test:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set myminio http://s3test:9000 s3user s3user-s3cr3t;
+      mc mb --ignore-existing myminio/test-bucket;
+      exit 0;
+      "
+
+volumes:
+  pgtest-data:
+  s3test-data:

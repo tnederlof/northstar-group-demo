@@ -1,0 +1,132 @@
+name: Demo Validate
+
+on:
+  pull_request:
+    paths:
+      - 'demo/**'
+      - '.github/workflows/demo-validate.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'demo/**'
+      - '.github/workflows/demo-validate.yml'
+
+jobs:
+  validate:
+    name: Validate Demo Scenarios
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Validate scenario manifests
+        run: |
+          make -C demo validate-scenarios
+        continue-on-error: false
+      
+      - name: Validate Docker Compose files
+        run: |
+          echo "Validating Docker Compose files..."
+          failed=0
+          for f in demo/engineering/scenarios/**/docker-compose.yml; do
+            if [ -f "$f" ]; then
+              echo "Checking $f"
+              if ! docker compose -f "$f" config > /dev/null 2>&1; then
+                echo "ERROR: $f is invalid"
+                failed=1
+              else
+                echo "✓ $f is valid"
+              fi
+            fi
+          done
+          
+          if [ $failed -eq 1 ]; then
+            echo "Some Docker Compose files are invalid"
+            exit 1
+          fi
+        continue-on-error: false
+      
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+      
+      - name: Run shellcheck on demo scripts
+        run: |
+          echo "Running shellcheck on demo scripts..."
+          find demo -name '*.sh' -type f | while read -r script; do
+            echo "Checking $script"
+            shellcheck "$script" || echo "Warning: shellcheck found issues in $script"
+          done
+        continue-on-error: true
+      
+      - name: Check for scenario README files
+        run: |
+          echo "Checking for scenario documentation..."
+          failed=0
+          
+          # Check SRE scenarios
+          for scenario_dir in demo/sre/scenarios/*/*; do
+            if [ -d "$scenario_dir" ] && [ ! -f "$scenario_dir/README.md" ]; then
+              echo "WARNING: Missing README.md in $scenario_dir"
+              failed=1
+            fi
+          done
+          
+          # Check Engineering scenarios
+          for scenario_dir in demo/engineering/scenarios/*/*; do
+            if [ -d "$scenario_dir" ] && [ ! -f "$scenario_dir/README.md" ]; then
+              echo "WARNING: Missing README.md in $scenario_dir"
+              failed=1
+            fi
+          done
+          
+          if [ $failed -eq 1 ]; then
+            echo "Some scenarios are missing README.md files"
+            exit 1
+          else
+            echo "✓ All scenarios have README.md files"
+          fi
+        continue-on-error: false
+      
+      - name: Validate scenario JSON metadata
+        run: |
+          echo "Validating scenario JSON metadata..."
+          failed=0
+          
+          for json_file in demo/**/scenario.json; do
+            if [ -f "$json_file" ]; then
+              echo "Validating $json_file"
+              if ! python3 -m json.tool "$json_file" > /dev/null 2>&1; then
+                echo "ERROR: $json_file is invalid JSON"
+                failed=1
+              else
+                echo "✓ $json_file is valid JSON"
+              fi
+            fi
+          done
+          
+          if [ $failed -eq 1 ]; then
+            echo "Some scenario JSON files are invalid"
+            exit 1
+          fi
+        continue-on-error: false
+      
+      - name: Check Makefile targets exist
+        run: |
+          echo "Checking required Makefile targets..."
+          required_targets="validate-scenarios"
+          
+          for target in $required_targets; do
+            if ! make -C demo -n "$target" > /dev/null 2>&1; then
+              echo "ERROR: Missing required Makefile target: $target"
+              exit 1
+            else
+              echo "✓ Found Makefile target: $target"
+            fi
+          done

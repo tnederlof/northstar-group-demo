@@ -1,0 +1,16 @@
+# ServiceMonitor expects 'metrics: enabled' label which doesn't exist
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: fider-metrics
+  labels:
+    app: fider
+spec:
+  selector:
+    matchLabels:
+      app: fider
+      # This label doesn't match the Service (disabled vs enabled)
+      metrics: enabled
+  endpoints:
+    - port: metrics
+      interval: 30s

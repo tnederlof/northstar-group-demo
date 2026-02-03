@@ -1,0 +1,20 @@
+{
+  "track": "platform",
+  "slug": "resource-exhaustion",
+  "title": "Resource Exhaustion - Memory Limits Too Low",
+  "type": "sre",
+  "url_host": "resource-exhaustion.localhost",
+  "seed": true,
+  "reset_strategy": "namespace-delete",
+  "description": "Memory limits are set too low, causing the application to be OOMKilled repeatedly.",
+  "symptoms": [
+    "Pods showing OOMKilled termination reason",
+    "High restart count on pods",
+    "Application intermittently unreachable"
+  ],
+  "fix_hints": [
+    "Check pod status for OOMKilled",
+    "Review resource limits in deployment",
+    "Patch deployment with appropriate memory limits"
+  ]
+}

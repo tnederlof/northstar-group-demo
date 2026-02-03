@@ -1,0 +1,20 @@
+{
+  "track": "platform",
+  "slug": "bad-rollout",
+  "title": "Bad Rollout - Database Connection Failure",
+  "type": "sre",
+  "url_host": "bad-rollout.localhost",
+  "seed": true,
+  "reset_strategy": "namespace-delete",
+  "description": "A deployment was pushed with an incorrect DATABASE_URL, causing pods to fail on startup.",
+  "symptoms": [
+    "Pods in CrashLoopBackOff state",
+    "Connection refused errors in logs",
+    "Application unreachable"
+  ],
+  "fix_hints": [
+    "Check pod logs for connection errors",
+    "Compare DATABASE_URL with working configuration",
+    "Use kubectl set env or rollout undo"
+  ]
+}

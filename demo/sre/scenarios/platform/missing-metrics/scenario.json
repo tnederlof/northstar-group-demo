@@ -1,0 +1,20 @@
+{
+  "track": "platform",
+  "slug": "missing-metrics",
+  "title": "Missing Metrics - Service Monitor Misconfiguration",
+  "type": "sre",
+  "url_host": "missing-metrics.localhost",
+  "seed": true,
+  "reset_strategy": "namespace-delete",
+  "description": "Metrics port not exposed or selector mismatch causing missing scrape targets.",
+  "symptoms": [
+    "Missing scrape targets in Prometheus",
+    "No metrics data for the application",
+    "ServiceMonitor not matching pods"
+  ],
+  "fix_hints": [
+    "Check ServiceMonitor selector labels",
+    "Verify metrics port is exposed in Service",
+    "Match labels between Service and ServiceMonitor"
+  ]
+}

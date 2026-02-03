@@ -1,0 +1,21 @@
+{
+  "track": "backend",
+  "slug": "ui-regression",
+  "title": "UI Regression - Missing Null Check",
+  "type": "engineering",
+  "url_host": "ui-regression.localhost",
+  "seed": true,
+  "reset_strategy": "worktree-reset",
+  "branch": "demo/backend/ui-regression",
+  "description": "A missing null check in a backend handler causes 500 errors under specific conditions.",
+  "symptoms": [
+    "500 errors on certain API endpoints",
+    "Nil pointer dereference in logs",
+    "CI tests failing"
+  ],
+  "fix_hints": [
+    "Check handler for nil pointer access",
+    "Add appropriate null checks",
+    "Run tests to verify fix"
+  ]
+}

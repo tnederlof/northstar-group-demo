@@ -1,0 +1,9 @@
+# Demo generated state
+demo/.state/
+
+# Scenario worktrees (managed by git worktree)
+demo/engineering/scenarios/**/worktree/
+
+# Local development
+.env.local
+*.local.env

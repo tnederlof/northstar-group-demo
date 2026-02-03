@@ -1,0 +1,17 @@
+# Gateway API CRDs
+# Apply the standard Gateway API CRDs from the official release
+# kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
+#
+# This file is a placeholder - the actual CRDs are applied via remote URL in setup scripts
+# to ensure we always use the correct version without duplicating large YAML.
+#
+# Version: v1.2.0 (pinned for demo stability)
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-api-version
+  namespace: default
+data:
+  version: "v1.2.0"
+  install-url: "https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml"

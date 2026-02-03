@@ -1,0 +1,10 @@
+# Kustomize base for Fider demo deployments
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - deployment-fider.yaml
+  - deployment-postgres.yaml
+  - service-fider.yaml
+  - service-postgres.yaml
+  - configmap-env.yaml

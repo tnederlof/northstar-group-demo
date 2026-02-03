@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fider-env
+data:
+  BASE_URL: "http://missing-metrics.localhost:8080"
+  METRICS_ENABLED: "true"
+  METRICS_PORT: "4000"

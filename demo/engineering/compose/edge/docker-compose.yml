@@ -1,0 +1,29 @@
+# Traefik Edge Proxy for Engineering Track
+# Routes requests by hostname to scenario containers
+#
+# Usage:
+#   docker compose -f demo/engineering/compose/edge/docker-compose.yml up -d
+
+services:
+  traefik:
+    image: traefik:v3.0
+    container_name: northstar-edge
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=northstar-demo"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "8080:80"
+      - "8081:8080"  # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - northstar-demo
+    restart: unless-stopped
+
+networks:
+  northstar-demo:
+    name: northstar-demo
+    driver: bridge

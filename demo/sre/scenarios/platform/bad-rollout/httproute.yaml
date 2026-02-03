@@ -1,0 +1,19 @@
+# HTTPRoute for bad-rollout scenario
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: fider
+spec:
+  parentRefs:
+    - name: fider-demo
+      namespace: default
+  hostnames:
+    - "bad-rollout.localhost"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: fider
+          port: 3000

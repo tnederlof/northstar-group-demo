@@ -1,0 +1,16 @@
+# Fider ClusterIP Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: fider
+  labels:
+    app: fider
+spec:
+  type: ClusterIP
+  selector:
+    app: fider
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP

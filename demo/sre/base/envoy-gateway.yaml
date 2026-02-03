@@ -1,0 +1,16 @@
+# Envoy Gateway Controller
+# Lightweight Gateway API implementation from the Envoy project
+#
+# Installation via Helm (executed by setup scripts):
+# helm install eg oci://docker.io/envoyproxy/gateway-helm --version v1.2.0 -n envoy-gateway-system --create-namespace
+#
+# This file contains post-install configuration for the Gateway
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: envoy-gateway-version
+  namespace: default
+data:
+  version: "v1.2.0"
+  helm-chart: "oci://docker.io/envoyproxy/gateway-helm"

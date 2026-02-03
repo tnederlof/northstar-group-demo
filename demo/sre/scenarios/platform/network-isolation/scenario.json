@@ -1,0 +1,20 @@
+{
+  "track": "platform",
+  "slug": "network-isolation",
+  "title": "Network Isolation - NetworkPolicy Blocking Database",
+  "type": "sre",
+  "url_host": "network-isolation.localhost",
+  "seed": true,
+  "reset_strategy": "namespace-delete",
+  "description": "A NetworkPolicy is blocking egress to the Postgres database, causing connection timeouts.",
+  "symptoms": [
+    "Database connection timeout errors in logs",
+    "Application pods running but unresponsive",
+    "Health checks failing"
+  ],
+  "fix_hints": [
+    "Check NetworkPolicy rules in the namespace",
+    "Verify egress is allowed to postgres service",
+    "Apply corrected NetworkPolicy or delete the blocking one"
+  ]
+}
