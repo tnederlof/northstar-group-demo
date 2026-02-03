@@ -74,11 +74,11 @@ validate_scenario() {
         ((errors++))
     fi
     
-    # Validate path depth (should be <type>/<track>/<slug>)
+    # Validate path depth (should be <type>/scenarios/<track>/<slug>)
     local depth
     depth=$(echo "$rel_path" | tr -cd '/' | wc -c)
-    if [[ "$depth" -ne 2 ]]; then
-        echo "  ERROR: Scenario path must be exactly 3 levels deep: <type>/<track>/<slug>" >&2
+    if [[ "$depth" -ne 3 ]]; then
+        echo "  ERROR: Scenario path must be exactly 4 levels deep: <type>/scenarios/<track>/<slug>" >&2
         echo "         Got: $rel_path (depth: $((depth + 1)))" >&2
         ((errors++))
     fi
