@@ -7,9 +7,15 @@
 # ==============================================================================
 # Stage 1: Build the Go backend
 # ==============================================================================
-FROM golang:1.25-alpine AS go-builder
+FROM golang:1.25-bookworm AS go-builder
 
-RUN apk add --no-cache make git build-base
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    libc6-dev \
+    make \
+    git \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -21,14 +27,14 @@ RUN go mod download
 COPY fider/ ./
 
 # Build the server (CGO required for v8go)
-RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o fider .
+RUN go build -ldflags="-s -w" -o fider .
 
 # ==============================================================================
 # Stage 2: Build the frontend
 # ==============================================================================
-FROM node:24-alpine AS node-builder
+FROM node:24-bookworm AS node-builder
 
-RUN apk add --no-cache make
+RUN apt-get update && apt-get install -y make && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -44,9 +50,9 @@ RUN make build-ui
 # ==============================================================================
 # Stage 3: Final runtime image
 # ==============================================================================
-FROM alpine:3.23
+FROM debian:bookworm-slim
 
-RUN apk add --no-cache ca-certificates tzdata libgcc libstdc++
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
