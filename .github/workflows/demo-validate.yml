@@ -26,6 +26,7 @@ jobs:
       
       - name: Validate scenario manifests
         run: |
+          set -x
           make -C demo validate-scenarios
         continue-on-error: false
       
