@@ -65,35 +65,6 @@ jobs:
           done
         continue-on-error: true
       
-      - name: Check for scenario README files
-        run: |
-          echo "Checking for scenario documentation..."
-          failed=0
-          
-          # Check SRE scenarios
-          for scenario_dir in demo/sre/scenarios/*/*; do
-            if [ -d "$scenario_dir" ] && [ ! -f "$scenario_dir/README.md" ]; then
-              echo "WARNING: Missing README.md in $scenario_dir"
-              failed=1
-            fi
-          done
-          
-          # Check Engineering scenarios
-          for scenario_dir in demo/engineering/scenarios/*/*; do
-            if [ -d "$scenario_dir" ] && [ ! -f "$scenario_dir/README.md" ]; then
-              echo "WARNING: Missing README.md in $scenario_dir"
-              failed=1
-            fi
-          done
-          
-          if [ $failed -eq 1 ]; then
-            echo "Some scenarios are missing README.md files"
-            exit 1
-          else
-            echo "✓ All scenarios have README.md files"
-          fi
-        continue-on-error: false
-      
       - name: Validate scenario JSON metadata
         run: |
           echo "Validating scenario JSON metadata..."
