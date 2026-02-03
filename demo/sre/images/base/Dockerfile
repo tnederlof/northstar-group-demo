@@ -9,7 +9,7 @@
 # ==============================================================================
 FROM golang:1.25-alpine AS go-builder
 
-RUN apk add --no-cache make git
+RUN apk add --no-cache make git build-base
 
 WORKDIR /app
 
@@ -20,8 +20,8 @@ RUN go mod download
 # Copy the rest of the source
 COPY fider/ ./
 
-# Build the server
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o fider .
+# Build the server (CGO required for v8go)
+RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o fider .
 
 # ==============================================================================
 # Stage 2: Build the frontend
@@ -46,7 +46,7 @@ RUN make build-ui
 # ==============================================================================
 FROM alpine:3.23
 
-RUN apk add --no-cache ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata libgcc libstdc++
 
 WORKDIR /app
 
