@@ -70,7 +70,7 @@ echo ""
 
 apply_k8s() {
     local context="${KUBE_CONTEXT:-kind-fider-demo}"
-    local namespace="fider-$SLUG"
+    local namespace="demo-$SLUG"
     
     echo "Using Kubernetes context: $context"
     echo "Target namespace: $namespace"

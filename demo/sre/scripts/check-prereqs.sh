@@ -12,12 +12,15 @@ ERRORS=0
 check_command() {
     local cmd="$1"
     local name="${2:-$cmd}"
+    local required="${3:-true}"
     
     if command -v "$cmd" &> /dev/null; then
         echo -e "${GREEN}✓${NC} $name found"
     else
         echo -e "${RED}✗${NC} $name not found"
-        ((ERRORS++))
+        if [[ "$required" == "true" ]]; then
+            ((ERRORS++))
+        fi
     fi
 }
 
@@ -44,7 +47,7 @@ check_command curl
 
 echo ""
 echo "Optional commands:"
-check_command helm "helm (for Envoy Gateway)"
+check_command helm "helm (for Envoy Gateway)" false
 
 echo ""
 echo "Port availability:"
