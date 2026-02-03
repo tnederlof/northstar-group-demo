@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: fider
-          image: ghcr.io/warpdotdev/northstar-group-demo-fider:base
+          image: ghcr.io/tnederlof/northstar-group-demo:base
           imagePullPolicy: Always
           ports:
             - containerPort: 3000

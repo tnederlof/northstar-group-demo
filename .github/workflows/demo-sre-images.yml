@@ -40,7 +40,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/warpdotdev/northstar-group-demo-fider:base
-            ghcr.io/warpdotdev/northstar-group-demo-fider:latest
+            ghcr.io/tnederlof/northstar-group-demo:base
+            ghcr.io/tnederlof/northstar-group-demo:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max

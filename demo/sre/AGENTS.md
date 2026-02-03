@@ -8,7 +8,7 @@ Kubernetes-first demos. Configuration-driven breakage.
 
 - **kind cluster** with Envoy Gateway
 - **Hostname routing** via Gateway API HTTPRoutes
-- **Pre-built image**: `ghcr.io/warpdotdev/northstar-group-demo-fider:base`
+- **Pre-built image**: `ghcr.io/tnederlof/northstar-group-demo:base`
 
 ## Manifest Layering
 

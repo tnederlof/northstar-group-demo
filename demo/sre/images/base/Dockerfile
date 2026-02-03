@@ -2,7 +2,7 @@
 # Built from the modified Fider source with demo mode support
 #
 # Build from repo root:
-#   docker build -f demo/sre/images/base/Dockerfile -t ghcr.io/warpdotdev/northstar-group-demo-fider:base .
+#   docker build -f demo/sre/images/base/Dockerfile -t ghcr.io/tnederlof/northstar-group-demo:base .
 
 # ==============================================================================
 # Stage 1: Build the Go backend
