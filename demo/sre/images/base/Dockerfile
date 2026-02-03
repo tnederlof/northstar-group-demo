@@ -28,6 +28,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o fider .
 # ==============================================================================
 FROM node:24-alpine AS node-builder
 
+RUN apk add --no-cache make
+
 WORKDIR /app
 
 # Copy package files first for better caching
@@ -36,7 +38,8 @@ RUN npm ci
 
 # Copy source and build
 COPY fider/ ./
-RUN npm run build
+RUN make build-ssr
+RUN make build-ui
 
 # ==============================================================================
 # Stage 3: Final runtime image
@@ -50,6 +53,7 @@ WORKDIR /app
 # Copy built artifacts
 COPY --from=go-builder /app/fider ./fider
 COPY --from=node-builder /app/dist ./dist
+COPY --from=node-builder /app/ssr.js ./ssr.js
 COPY --from=node-builder /app/migrations ./migrations
 COPY --from=node-builder /app/views ./views
 COPY --from=node-builder /app/locale ./locale
