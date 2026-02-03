@@ -8,6 +8,12 @@ on:
       - 'fider/**'
       - 'demo/sre/images/base/**'
   workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'Platform(s) to build (comma-separated)'
+        required: false
+        default: 'linux/arm64'
+        type: string
 
 permissions:
   contents: read
@@ -37,10 +43,14 @@ jobs:
         with:
           context: .
           file: demo/sre/images/base/Dockerfile
-          platforms: linux/amd64,linux/arm64
+          # Default to arm64 for ARM Mac Kind clusters, multi-arch on manual dispatch
+          platforms: ${{ inputs.platforms || 'linux/arm64' }}
           push: true
           tags: |
             ghcr.io/tnederlof/northstar-group-demo:base
             ghcr.io/tnederlof/northstar-group-demo:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # Enable all Buildx cache features
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1

@@ -9,43 +9,46 @@
 # ==============================================================================
 FROM golang:1.25-bookworm AS go-builder
 
+# Most packages already in golang image, only add what's missing
 RUN apt-get update && apt-get install -y \
     build-essential \
-    gcc \
-    libc6-dev \
-    make \
-    git \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Copy go mod files first for better caching
 COPY fider/go.mod fider/go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
 # Copy the rest of the source
 COPY fider/ ./
 
-# Build the server (CGO required for v8go)
-RUN go build -ldflags="-s -w" -o fider .
+# Build the server with cache mounts for faster rebuilds
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go build -ldflags="-s -w" -o fider .
 
 # ==============================================================================
 # Stage 2: Build the frontend
 # ==============================================================================
 FROM node:24-bookworm AS node-builder
 
-RUN apt-get update && apt-get install -y make && rm -rf /var/lib/apt/lists/*
-
+# make is already in node image
 WORKDIR /app
 
 # Copy package files first for better caching
 COPY fider/package.json fider/package-lock.json ./
-RUN npm ci
+
+# Use cache mount for npm to avoid re-downloading packages
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --prefer-offline --no-audit
 
 # Copy source and build
 COPY fider/ ./
-RUN make build-ssr
-RUN make build-ui
+
+# Combine build steps to reduce layers and enable parallel processing
+RUN make build-ssr && make build-ui
 
 # ==============================================================================
 # Stage 3: Final runtime image
