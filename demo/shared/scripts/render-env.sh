@@ -68,6 +68,7 @@ if [[ ! -f "$GLOBAL_SECRETS" ]]; then
 fi
 
 # Source the global secrets
+# shellcheck source=/dev/null
 source "$GLOBAL_SECRETS"
 
 # Create output directory

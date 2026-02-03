@@ -47,7 +47,7 @@ validate_scenario() {
     
     local scenario_dir
     scenario_dir="$(dirname "$manifest")"
-    local rel_path="${scenario_dir#$DEMO_DIR/}"
+    local rel_path="${scenario_dir#"$DEMO_DIR"/}"
     
     # Check if file is valid JSON
     if ! jq empty "$manifest" 2>/dev/null; then
@@ -97,9 +97,6 @@ cmd_list() {
         if [[ ! -d "$track_dir/scenarios" ]]; then
             continue
         fi
-        
-        local track_name
-        track_name="$(basename "$track_dir")"
         
         while IFS= read -r manifest; do
             [[ -z "$manifest" ]] && continue
@@ -178,7 +175,7 @@ cmd_validate() {
             found=$((found + 1))
             
             local rel_path
-            rel_path="$(dirname "${manifest#$DEMO_DIR/}")"
+            rel_path="$(dirname "${manifest#"$DEMO_DIR"/}")"
             echo "Checking: $rel_path"
             
             if ! validate_scenario "$manifest"; then

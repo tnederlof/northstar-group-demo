@@ -102,11 +102,6 @@ apply_compose() {
     echo "Using Compose project: $project"
     echo ""
     
-    # Generate runtime env file if needed
-    local track
-    # Determine track from scenario path structure
-    track=$(echo "$SCENARIO" | cut -d'/' -f1)
-    
     echo "Executing seed.sql..."
     
     docker compose -p "$project" exec -T postgres \

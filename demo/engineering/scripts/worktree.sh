@@ -13,7 +13,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENG_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 DEMO_DIR="$(cd "$ENG_DIR/.." && pwd)"
 REPO_ROOT="$(cd "$DEMO_DIR/.." && pwd)"
-SHARED_DIR="$DEMO_DIR/shared"
 
 usage() {
     cat <<EOF
