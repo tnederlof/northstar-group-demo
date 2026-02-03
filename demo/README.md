@@ -115,8 +115,8 @@ make eng-down SCENARIO=backend/api-regression
 
 ### Engineering Track
 - Docker and Docker Compose
-- Go 1.24+ (for backend changes)
-- Node.js 20+ and npm (for frontend changes)
+- Go 1.25+ (for backend changes)
+- Node.js 24+ and npm (for frontend changes)
 - `make`
 - Playwright (optional, for E2E tests)
 

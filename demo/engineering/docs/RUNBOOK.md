@@ -8,8 +8,8 @@ Ensure the following tools are installed before beginning:
 
 - **Docker**: For container runtime
 - **docker compose**: For local orchestration
-- **Go**: Go 1.24+ for backend
-- **Node.js**: Node 20+ and npm for frontend
+- **Go**: Go 1.25+ for backend
+- **Node.js**: Node 24+ and npm for frontend
 - **make**: Build automation tool
 - **Playwright** (optional): For end-to-end testing
 

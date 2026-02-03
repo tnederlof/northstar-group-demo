@@ -7,7 +7,7 @@
 # ==============================================================================
 # Stage 1: Build the Go backend
 # ==============================================================================
-FROM golang:1.24-alpine AS go-builder
+FROM golang:1.25-alpine AS go-builder
 
 RUN apk add --no-cache make git
 
@@ -26,7 +26,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o fider .
 # ==============================================================================
 # Stage 2: Build the frontend
 # ==============================================================================
-FROM node:22-alpine AS node-builder
+FROM node:24-alpine AS node-builder
 
 WORKDIR /app
 
@@ -41,7 +41,7 @@ RUN npm run build
 # ==============================================================================
 # Stage 3: Final runtime image
 # ==============================================================================
-FROM alpine:3.19
+FROM alpine:3.23
 
 RUN apk add --no-cache ca-certificates tzdata
 

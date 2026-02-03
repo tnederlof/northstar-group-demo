@@ -12,7 +12,7 @@ A dual-track demo repository showcasing debugging and development workflows with
 | Track | Required | Optional |
 |-------|----------|----------|
 | **SRE** | Docker, kind, kubectl, jq, curl | helm |
-| **Engineering** | Docker, git, go (1.22+), node (22+), npm | golangci-lint |
+|| **Engineering** | Docker, git, go (1.25+), node (24+), npm | golangci-lint |
 
 ### SRE Track
 
