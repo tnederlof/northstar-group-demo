@@ -26,9 +26,7 @@ jobs:
       
       - name: Validate scenario manifests
         run: |
-          set -x
-          echo "Running validation..."
-          bash -x demo/shared/scripts/validate-scenarios.sh validate 2>&1 || (echo "Direct validation failed!" && exit 1)
+          make -C demo validate-scenarios
         continue-on-error: false
       
       - name: Validate Docker Compose files

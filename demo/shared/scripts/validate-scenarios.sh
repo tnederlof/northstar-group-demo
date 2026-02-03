@@ -59,7 +59,7 @@ validate_scenario() {
     for field in "${REQUIRED_FIELDS[@]}"; do
         if ! jq -e ".$field" "$manifest" >/dev/null 2>&1; then
             echo "  ERROR: Missing required field '$field' in $rel_path/scenario.json" >&2
-            ((errors++))
+            errors=$((errors + 1))
         fi
     done
     
@@ -68,10 +68,10 @@ validate_scenario() {
     type=$(jq -r '.type' "$manifest")
     if [[ "$rel_path" == sre/* && "$type" != "sre" ]]; then
         echo "  ERROR: Scenario in sre/ directory but type is '$type' (expected 'sre')" >&2
-        ((errors++))
+        errors=$((errors + 1))
     elif [[ "$rel_path" == engineering/* && "$type" != "engineering" ]]; then
         echo "  ERROR: Scenario in engineering/ directory but type is '$type' (expected 'engineering')" >&2
-        ((errors++))
+        errors=$((errors + 1))
     fi
     
     # Validate path depth (should be <type>/scenarios/<track>/<slug>)
@@ -80,7 +80,7 @@ validate_scenario() {
     if [[ "$depth" -ne 3 ]]; then
         echo "  ERROR: Scenario path must be exactly 4 levels deep: <type>/scenarios/<track>/<slug>" >&2
         echo "         Got: $rel_path (depth: $((depth + 1)))" >&2
-        ((errors++))
+        errors=$((errors + 1))
     fi
     
     return $errors
@@ -103,7 +103,7 @@ cmd_list() {
         
         while IFS= read -r manifest; do
             [[ -z "$manifest" ]] && continue
-            ((found++))
+            found=$((found + 1))
             
             local title track slug type
             title=$(jq -r '.title // "Untitled"' "$manifest")
@@ -175,14 +175,14 @@ cmd_validate() {
         
         while IFS= read -r manifest; do
             [[ -z "$manifest" ]] && continue
-            ((found++))
+            found=$((found + 1))
             
             local rel_path
             rel_path="$(dirname "${manifest#$DEMO_DIR/}")"
             echo "Checking: $rel_path"
             
             if ! validate_scenario "$manifest"; then
-                ((errors++))
+                errors=$((errors + 1))
             fi
         done < <(find_scenarios "$track_dir/scenarios")
     done
