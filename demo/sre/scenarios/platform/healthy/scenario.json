@@ -1,0 +1,12 @@
+{
+  "track": "platform",
+  "slug": "healthy",
+  "title": "Healthy Baseline - Working Application",
+  "type": "sre",
+  "url_host": "healthy.localhost",
+  "seed": true,
+  "reset_strategy": "namespace-delete",
+  "description": "A fully working deployment with no issues. Use this to verify the infrastructure and container work correctly before testing broken scenarios.",
+  "symptoms": [],
+  "fix_hints": []
+}

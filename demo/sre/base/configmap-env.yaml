@@ -20,6 +20,10 @@ data:
   DEMO_MODE: "true"
   SIGNUP_DISABLED: "true"
   
+  # Security (demo values - NOT for production)
+  JWT_SECRET: "northstar-demo-jwt-secret-not-for-production"
+  DEMO_LOGIN_KEY: "northstar-demo-key"
+  
   # Blob storage (SQL only for demos)
   BLOB_STORAGE: "sql"
   

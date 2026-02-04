@@ -87,10 +87,13 @@ apply_k8s() {
     fi
     
     echo "Found postgres pod: $postgres_pod"
-    echo "Executing seed.sql..."
+    echo "Copying seed file to pod..."
     
-    kubectl --context="$context" -n "$namespace" exec -i "$postgres_pod" -- \
-        psql -U fider -d fider < "$SEED_FILE"
+    kubectl --context="$context" -n "$namespace" cp "$SEED_FILE" "$postgres_pod:/tmp/seed.sql"
+    
+    echo "Executing seed.sql..."
+    kubectl --context="$context" -n "$namespace" exec "$postgres_pod" -- \
+        psql -U fider -d fider -f /tmp/seed.sql
     
     echo ""
     echo "Seed data applied successfully!"

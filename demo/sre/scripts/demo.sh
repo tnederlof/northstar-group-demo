@@ -81,6 +81,43 @@ cmd_up() {
     kubectl --context="$KUBE_CONTEXT" -n "$namespace" wait --for=condition=available \
         deployment/postgres --timeout=120s
     
+    # Wait for postgres to actually accept connections
+    echo "Waiting for postgres to accept connections..."
+    local retries=30
+    local postgres_pod
+    postgres_pod=$(kubectl --context="$KUBE_CONTEXT" -n "$namespace" get pods \
+        -l app=postgres -o jsonpath='{.items[0].metadata.name}')
+    
+    while [[ $retries -gt 0 ]]; do
+        if kubectl --context="$KUBE_CONTEXT" -n "$namespace" exec "$postgres_pod" -- \
+            pg_isready -U fider -d fider >/dev/null 2>&1; then
+            echo "Postgres is ready!"
+            break
+        fi
+        retries=$((retries - 1))
+        sleep 1
+    done
+    
+    if [[ $retries -eq 0 ]]; then
+        echo "Error: Postgres did not become ready in time" >&2
+        exit 1
+    fi
+    
+    # Run migrations using a one-off fider container
+    echo "Running database migrations..."
+    kubectl --context="$KUBE_CONTEXT" -n "$namespace" run fider-migrate \
+        --image=ghcr.io/tnederlof/northstar-group-demo:base \
+        --restart=Never \
+        --rm \
+        --attach \
+        --env="DATABASE_URL=postgres://fider:fider@postgres:5432/fider?sslmode=disable" \
+        --env="JWT_SECRET=northstar-demo-jwt-secret-not-for-production" \
+        --env="EMAIL=none" \
+        --env="EMAIL_NOREPLY=noreply@northstar.io" \
+        --env="HOST_MODE=single" \
+        --env="BASE_URL=http://localhost:8080" \
+        --command -- ./fider migrate
+    
     # Apply seed data
     echo "Applying seed data..."
     "$SHARED_DIR/scripts/apply-seed.sh" k8s "$scenario"
