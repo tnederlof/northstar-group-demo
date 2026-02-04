@@ -86,7 +86,7 @@ func CreatePost() web.HandlerFunc {
 		return c.Failure(err)
 	}
 
-	if !env.Config.PostCreationWithTagsEnabled {
+	if env.Config.PostCreationWithTagsEnabled {
 		for _, tag := range action.Tags {
 			assignTag := &cmd.AssignTag{Tag: tag, Post: newPost.Result}
 			if err := bus.Dispatch(c, assignTag); err != nil {
