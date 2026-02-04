@@ -506,6 +506,10 @@ func ListVotes() web.HandlerFunc {
 		return c.Failure(err)
 	}
 
+	if getPost.Result == nil {
+		return c.NotFound()
+	}
+
 	includeEmail := c.User() != nil && c.User().IsCollaborator()
 	listVotes := &query.ListPostVotes{PostID: getPost.Result.ID, IncludeEmail: includeEmail}
 		if err := bus.Dispatch(c, listVotes); err != nil {
