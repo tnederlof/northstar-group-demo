@@ -101,7 +101,6 @@ Marcus works on feature tickets, often involving database changes. He carefully 
 
 | Scenario | Path | Focus |
 |----------|------|-------|
-| Migration Conflict | `backend/migration-conflict` | Database migrations and conflicts |
 | API Regression | `backend/api-regression` | Bug fixing and testing |
 
 ### Marcus's Toolbox
@@ -168,7 +167,7 @@ Jennifer starts by reviewing design mockups and user stories. She builds React c
 - Focus: Basic debugging, testing, code review
 
 **Mid-Level Engineers** (3-5 years):
-- Recommended: Migration Conflict, Error Boundary, Config Change
+- Recommended: Error Boundary, Config Change
 - Focus: Complex debugging, system understanding
 
 **Senior Engineers** (5+ years):
@@ -178,7 +177,7 @@ Jennifer starts by reviewing design mockups and user stories. She builds React c
 ### By Role
 
 **Application Developers**:
-- Backend: API Regression, Migration Conflict, Feature Flag
+- Backend: API Regression, Feature Flag
 - Frontend: Error Boundary
 
 **Infrastructure/Platform**:

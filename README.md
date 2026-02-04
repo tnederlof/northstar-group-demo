@@ -60,7 +60,6 @@ make reset-all FORCE=true
 |----------|-------------|------------|
 | `backend/ui-regression` | Missing null check | Testing, debugging |
 | `frontend/missing-fallback` | React error boundary | Frontend debugging |
-| `backend/migration-conflict` | Duplicate migrations | Database migrations |
 | `backend/feature-flag-rollout` | Feature flag implementation | Feature development |
 
 ## Key Invariants

@@ -201,7 +201,7 @@ Git worktrees for Engineering scenarios:
 .worktrees/
 ├── backend/
 │   ├── api-regression/
-│   └── migration-conflict/
+│   └── feature-flag-rollout/
 └── frontend/
     └── error-boundary/
 ```

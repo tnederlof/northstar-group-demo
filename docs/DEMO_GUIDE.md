@@ -150,24 +150,6 @@ make eng-up SCENARIO=backend/api-regression
 make eng-up SCENARIO=frontend/error-boundary
 ```
 
-### Backend/Migration Conflict
-**Duration**: 15 minutes
-**Difficulty**: Medium
-**Persona**: Backend Engineer (Marcus)
-
-**Scenario**: Duplicate migration numbers cause startup failures.
-
-**Key Learning Points**:
-- Database migration best practices
-- Migration ordering and dependencies
-- Handling merge conflicts
-- Schema evolution strategies
-
-**Run Command**:
-```bash
-make eng-up SCENARIO=backend/migration-conflict
-```
-
 ### Backend/Feature Flag Rollout
 **Duration**: 10 minutes
 **Difficulty**: Easy
