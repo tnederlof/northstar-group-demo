@@ -501,13 +501,13 @@ func ListVotes() web.HandlerFunc {
 			return c.NotFound()
 		}
 
-		getPost := &query.GetPostByNumber{Number: number}
-		if err := bus.Dispatch(c, getPost); err != nil {
-			return c.Failure(err)
-		}
+	getPost := &query.GetPostByNumber{Number: number}
+	if err := bus.Dispatch(c, getPost); err != nil {
+		return c.Failure(err)
+	}
 
-		includeEmail := c.User() != nil && c.User().IsCollaborator()
-		listVotes := &query.ListPostVotes{PostID: getPost.Result.ID, IncludeEmail: includeEmail}
+	includeEmail := c.User() != nil && c.User().IsCollaborator()
+	listVotes := &query.ListPostVotes{PostID: getPost.Result.ID, IncludeEmail: includeEmail}
 		if err := bus.Dispatch(c, listVotes); err != nil {
 			return c.Failure(err)
 		}
