@@ -106,39 +106,64 @@ log_verbose() {
 # Args: check_json
 run_http_get() {
     local check_json="$1"
-    local url description
+    local url description timeout_seconds retry_interval
     url=$(echo "$check_json" | jq -r '.url')
     description=$(echo "$check_json" | jq -r '.description // "HTTP GET check"')
+    timeout_seconds=$(echo "$check_json" | jq -r '.timeout_seconds // 30')
+    retry_interval=$(echo "$check_json" | jq -r '.retry_interval // 2')
     
     local expect_status expect_status_not
     expect_status=$(echo "$check_json" | jq -c '.expect.status // []')
     expect_status_not=$(echo "$check_json" | jq -c '.expect.status_not // []')
     
-    log_verbose "GET $url"
+    log_verbose "GET $url (timeout: ${timeout_seconds}s, retry interval: ${retry_interval}s)"
     
-    local status_code
-    status_code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "$url" 2>/dev/null || echo "000")
+    local start_time
+    start_time=$(date +%s)
+    local end_time=$((start_time + timeout_seconds))
     
-    log_verbose "Response status: $status_code"
-    
-    # Check status_not first (negative assertion)
-    if [[ "$expect_status_not" != "[]" ]]; then
-        if echo "$expect_status_not" | jq -e "contains([$status_code])" >/dev/null 2>&1; then
-            log_fail "$description (got $status_code, expected not in $expect_status_not)"
+    while true; do
+        local status_code
+        status_code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 5 --max-time 10 "$url" 2>/dev/null || echo "000")
+        
+        log_verbose "Response status: $status_code"
+        
+        local check_passed=true
+        local failure_message=""
+        
+        # Check status_not first (negative assertion)
+        if [[ "$expect_status_not" != "[]" ]]; then
+            if echo "$expect_status_not" | jq -e "contains([$status_code])" >/dev/null 2>&1; then
+                check_passed=false
+                failure_message="got $status_code, expected not in $expect_status_not"
+            fi
+        fi
+        
+        # Check status (positive assertion)
+        if [[ "$check_passed" == "true" && "$expect_status" != "[]" ]]; then
+            if ! echo "$expect_status" | jq -e "contains([$status_code])" >/dev/null 2>&1; then
+                check_passed=false
+                failure_message="got $status_code, expected one of $expect_status"
+            fi
+        fi
+        
+        # If check passed, return success
+        if [[ "$check_passed" == "true" ]]; then
+            log_pass "$description"
+            return 0
+        fi
+        
+        # Check if we've exceeded the timeout
+        local current_time
+        current_time=$(date +%s)
+        if [[ "$current_time" -ge "$end_time" ]]; then
+            log_fail "$description ($failure_message)"
             return 1
         fi
-    fi
-    
-    # Check status (positive assertion)
-    if [[ "$expect_status" != "[]" ]]; then
-        if ! echo "$expect_status" | jq -e "contains([$status_code])" >/dev/null 2>&1; then
-            log_fail "$description (got $status_code, expected one of $expect_status)"
-            return 1
-        fi
-    fi
-    
-    log_pass "$description"
-    return 0
+        
+        log_verbose "Check failed, retrying in ${retry_interval}s... ($((end_time - current_time))s remaining)"
+        sleep "$retry_interval"
+    done
 }
 
 # k8s.jqEquals - Check K8s resource field with jq
@@ -260,22 +285,44 @@ run_k8s_pod_restart_count() {
 run_k8s_deployment_available() {
     local check_json="$1"
     local namespace="$2"
-    local description name
+    local description name timeout_seconds wait_seconds
     description=$(echo "$check_json" | jq -r '.description // "K8s deployment check"')
     name=$(echo "$check_json" | jq -r '.name')
+    timeout_seconds=$(echo "$check_json" | jq -r '.timeout_seconds // 60')
+    wait_seconds=$(echo "$check_json" | jq -r '.wait_seconds // 0')
     
-    log_verbose "Checking deployment: $name"
+    log_verbose "Checking deployment: $name (timeout: ${timeout_seconds}s, wait: ${wait_seconds}s)"
     
-    local available
-    available=$(kubectl --context="$KUBE_CONTEXT" -n "$namespace" get deployment "$name" -o jsonpath='{.status.conditions[?(@.type=="Available")].status}' 2>/dev/null || echo "")
-    
-    if [[ "$available" != "True" ]]; then
-        log_fail "$description (deployment not available)"
-        return 1
+    # If wait_seconds is specified, wait that long before checking
+    if [[ "$wait_seconds" -gt 0 ]]; then
+        log_verbose "Waiting ${wait_seconds}s for deployment to stabilize..."
+        sleep "$wait_seconds"
     fi
     
-    log_pass "$description"
-    return 0
+    # Use kubectl rollout status to wait for deployment
+    local start_time
+    start_time=$(date +%s)
+    local end_time=$((start_time + timeout_seconds))
+    
+    while true; do
+        local available
+        available=$(kubectl --context="$KUBE_CONTEXT" -n "$namespace" get deployment "$name" -o jsonpath='{.status.conditions[?(@.type=="Available")].status}' 2>/dev/null || echo "")
+        
+        if [[ "$available" == "True" ]]; then
+            log_pass "$description"
+            return 0
+        fi
+        
+        local current_time
+        current_time=$(date +%s)
+        if [[ "$current_time" -ge "$end_time" ]]; then
+            log_fail "$description (deployment not available after ${timeout_seconds}s)"
+            return 1
+        fi
+        
+        log_verbose "Deployment not ready yet, waiting... ($((end_time - current_time))s remaining)"
+        sleep 2
+    done
 }
 
 # k8s.resourceExists - Check if K8s resource exists
