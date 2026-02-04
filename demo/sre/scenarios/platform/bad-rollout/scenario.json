@@ -16,5 +16,44 @@
     "Check pod logs for connection errors",
     "Compare DATABASE_URL with working configuration",
     "Use kubectl set env or rollout undo"
-  ]
+  ],
+  "checks": {
+    "version": 1,
+    "default_stage": "broken",
+    "stages": {
+      "broken": {
+        "verify": [
+          {
+            "type": "k8s.jqEquals",
+            "description": "ConfigMap contains intentionally broken DB host",
+            "resource": { "kind": "ConfigMap", "name": "fider-env" },
+            "jq": ".data.DATABASE_URL",
+            "equals": "postgres://fider:fider@postgres-wrong:5432/fider?sslmode=disable"
+          },
+          {
+            "type": "k8s.podsContainLog",
+            "description": "App logs mention the broken hostname",
+            "selector": "app=fider",
+            "contains": "postgres-wrong",
+            "since_seconds": 300
+          },
+          {
+            "type": "http.get",
+            "description": "Health endpoint is not healthy (expected)",
+            "url": "http://bad-rollout.localhost:8080/_health",
+            "expect": { "status_not": [200] }
+          }
+        ],
+        "health": [
+          {
+            "type": "k8s.podsContainLog",
+            "description": "Still failing to connect (symptom persists)",
+            "selector": "app=fider",
+            "contains": "connect",
+            "since_seconds": 60
+          }
+        ]
+      }
+    }
+  }
 }

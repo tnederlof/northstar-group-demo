@@ -83,7 +83,62 @@ validate_scenario() {
         errors=$((errors + 1))
     fi
     
+    # Validate checks schema if present
+    if jq -e '.checks' "$manifest" >/dev/null 2>&1; then
+        errors=$((errors + $(validate_checks "$manifest" "$rel_path")))
+    fi
+    
     return $errors
+}
+
+# Validate checks schema
+validate_checks() {
+    local manifest="$1"
+    local rel_path="$2"
+    local errors=0
+    
+    # checks.version must be present and equal to 1
+    local version
+    version=$(jq -r '.checks.version // "missing"' "$manifest")
+    if [[ "$version" == "missing" ]]; then
+        echo "  ERROR: checks.version is required when checks is present in $rel_path" >&2
+        errors=$((errors + 1))
+    elif [[ "$version" != "1" ]]; then
+        echo "  ERROR: checks.version must be 1, got '$version' in $rel_path" >&2
+        errors=$((errors + 1))
+    fi
+    
+    # checks.stages must be an object
+    if ! jq -e '.checks.stages | type == "object"' "$manifest" >/dev/null 2>&1; then
+        echo "  ERROR: checks.stages must be an object in $rel_path" >&2
+        errors=$((errors + 1))
+        echo $errors
+        return 0
+    fi
+    
+    # Each stage must have a verify array
+    local stages
+    stages=$(jq -r '.checks.stages | keys[]' "$manifest" 2>/dev/null)
+    for stage in $stages; do
+        if ! jq -e ".checks.stages.\"$stage\".verify | type == \"array\"" "$manifest" >/dev/null 2>&1; then
+            echo "  ERROR: checks.stages.$stage.verify must be an array in $rel_path" >&2
+            errors=$((errors + 1))
+        fi
+        
+        # Validate each check has required fields
+        local check_count
+        check_count=$(jq ".checks.stages.\"$stage\".verify | length" "$manifest" 2>/dev/null || echo 0)
+        for i in $(seq 0 $((check_count - 1))); do
+            local check_type
+            check_type=$(jq -r ".checks.stages.\"$stage\".verify[$i].type // \"missing\"" "$manifest")
+            if [[ "$check_type" == "missing" ]]; then
+                echo "  ERROR: Check at stages.$stage.verify[$i] missing type in $rel_path" >&2
+                errors=$((errors + 1))
+            fi
+        done
+    done
+    
+    echo $errors
 }
 
 # List all scenarios

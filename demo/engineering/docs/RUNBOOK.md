@@ -104,7 +104,7 @@ make eng-edge-down
 ### Start the Application
 
 ```bash
-make eng-up SCENARIO=backend/api-regression
+make eng-up SCENARIO=backend/ui-regression
 ```
 
 This starts:
@@ -113,15 +113,30 @@ This starts:
 - Any scenario-specific services
 
 The application will be available at:
-- **HTTP**: http://localhost
-- **HTTPS**: https://localhost (self-signed cert warning expected)
+- **URL**: `http://<slug>.localhost:8080` (e.g., `http://ui-regression.localhost:8080`)
+
+### Verify the Deployment
+
+Run scenario-specific checks to verify the deployment:
+
+```bash
+# Run all checks for the default stage
+make eng-verify SCENARIO=backend/ui-regression
+
+# Run checks for a specific stage
+make eng-verify SCENARIO=backend/ui-regression STAGE=broken
+make eng-verify SCENARIO=backend/ui-regression STAGE=fixed
+
+# Run only UI/Playwright checks
+make ui-verify TYPE=engineering SCENARIO=backend/ui-regression
+```
 
 ### Monitor Application Logs
 
 Use the sniff command to tail logs:
 
 ```bash
-make eng-sniff SCENARIO=backend/api-regression
+make eng-sniff SCENARIO=backend/ui-regression
 ```
 
 This shows real-time logs from all services.
@@ -129,7 +144,7 @@ This shows real-time logs from all services.
 ### Stop the Application
 
 ```bash
-make eng-down SCENARIO=backend/api-regression
+make eng-down SCENARIO=backend/ui-regression
 ```
 
 ## Working with Prepared PRs
@@ -309,10 +324,7 @@ Recommended flow for presentations:
 
 | Scenario | Path | Focus Area |
 |----------|------|------------|
-| API Regression | `backend/api-regression` | Backend debugging, null checks |
-| Error Boundary | `frontend/error-boundary` | React error handling |
-| Database Migration | `backend/migration-conflict` | Schema changes, migration ordering |
-| Feature Flag | `backend/feature-flag-rollout` | Progressive feature delivery |
+| UI Regression | `backend/ui-regression` | Backend debugging, null checks |
 
 ## Tips for Presenters
 

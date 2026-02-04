@@ -8,5 +8,39 @@
   "reset_strategy": "namespace-delete",
   "description": "A fully working deployment with no issues. Use this to verify the infrastructure and container work correctly before testing broken scenarios.",
   "symptoms": [],
-  "fix_hints": []
+  "fix_hints": [],
+  "checks": {
+    "version": 1,
+    "default_stage": "healthy",
+    "stages": {
+      "healthy": {
+        "verify": [
+          {
+            "type": "k8s.deploymentAvailable",
+            "description": "Fider deployment is available",
+            "name": "fider"
+          },
+          {
+            "type": "http.get",
+            "description": "Health endpoint returns 200",
+            "url": "http://healthy.localhost:8080/_health",
+            "expect": { "status": [200] }
+          },
+          {
+            "type": "playwright.run",
+            "description": "UI smoke test",
+            "suite": "sre/healthy"
+          }
+        ],
+        "health": [
+          {
+            "type": "http.get",
+            "description": "Health endpoint responding",
+            "url": "http://healthy.localhost:8080/_health",
+            "expect": { "status": [200] }
+          }
+        ]
+      }
+    }
+  }
 }

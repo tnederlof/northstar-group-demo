@@ -41,40 +41,57 @@ Welcome to the Northstar Group Demo! This directory contains two distinct demo t
 ### SRE Track Commands
 
 ```bash
-# One-time setup
+# One-time setup (creates cluster + installs Gateway API + Envoy Gateway)
 make sre-setup
-make sre-cluster-up
 
-# Run a scenario
+# Deploy a scenario
 make sre-demo SCENARIO=platform/bad-rollout
 
-# Health checks
+# Verify deployment (runs scenario-specific checks)
+make sre-verify SCENARIO=platform/bad-rollout
+
+# Health check (observational)
 make sre-health SCENARIO=platform/bad-rollout
 
 # Reset scenario
 make sre-reset SCENARIO=platform/bad-rollout
 
 # Teardown
-make sre-teardown-all
+make sre-down-all
+make sre-cluster-down  # Full cluster deletion
 ```
 
 ### Engineering Track Commands
 
 ```bash
+# One-time setup (starts Traefik edge proxy)
+make eng-setup
+
 # Setup a scenario worktree
-make eng-scenario-init SCENARIO=backend/api-regression
+make eng-scenario-init SCENARIO=backend/ui-regression
 
 # Start the app
-make eng-up SCENARIO=backend/api-regression
+make eng-up SCENARIO=backend/ui-regression
 
-# Run CI checks
-make eng-ci SCENARIO=backend/api-regression
+# Verify deployment (runs scenario-specific checks)
+make eng-verify SCENARIO=backend/ui-regression
 
 # Monitor logs
-make eng-sniff SCENARIO=backend/api-regression
+make eng-sniff SCENARIO=backend/ui-regression
 
 # Stop the app
-make eng-down SCENARIO=backend/api-regression
+make eng-down SCENARIO=backend/ui-regression
+```
+
+### Verification Commands
+
+```bash
+# Run only UI/Playwright checks
+make ui-verify TYPE=sre SCENARIO=platform/healthy
+
+# Verify with a specific stage
+make sre-verify SCENARIO=platform/bad-rollout STAGE=broken
+make eng-verify SCENARIO=backend/ui-regression STAGE=fixed
 ```
 
 ## Available Scenarios
@@ -83,19 +100,17 @@ make eng-down SCENARIO=backend/api-regression
 
 | Scenario | Duration | Difficulty | Focus |
 |----------|----------|------------|-------|
+| `platform/healthy` | 5 min | Easy | Baseline verification |
 | `platform/bad-rollout` | 15 min | Medium | Deployment failures and rollback |
-| `platform/traffic-split` | 12 min | Medium | Canary deployments with Gateway API |
-| `platform/config-change` | 10 min | Easy | ConfigMap updates and rolling restarts |
-| `platform/scale-event` | 15 min | Hard | HPA and resource management |
+| `platform/resource-exhaustion` | 12 min | Medium | OOMKilled pods, memory limits |
+| `platform/network-isolation` | 15 min | Medium | NetworkPolicy blocking database |
+| `platform/missing-metrics` | 10 min | Easy | ServiceMonitor misconfiguration |
 
 ### Engineering Track
 
 | Scenario | Duration | Difficulty | Focus |
 |----------|----------|------------|-------|
-| `backend/api-regression` | 12 min | Easy | Missing null check causes 500 errors |
-| `frontend/error-boundary` | 12 min | Medium | React error handling |
-| `backend/migration-conflict` | 15 min | Medium | Database migration conflicts |
-| `backend/feature-flag-rollout` | 10 min | Easy | Progressive feature delivery |
+| `backend/ui-regression` | 12 min | Easy | Missing null check causes 500 errors |
 
 ## Documentation
 

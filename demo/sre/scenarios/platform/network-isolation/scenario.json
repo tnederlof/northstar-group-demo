@@ -16,5 +16,42 @@
     "Check NetworkPolicy rules in the namespace",
     "Verify egress is allowed to postgres service",
     "Apply corrected NetworkPolicy or delete the blocking one"
-  ]
+  ],
+  "checks": {
+    "version": 1,
+    "default_stage": "broken",
+    "stages": {
+      "broken": {
+        "verify": [
+          {
+            "type": "k8s.resourceExists",
+            "description": "NetworkPolicy exists blocking database",
+            "resource": { "kind": "NetworkPolicy", "name": "deny-db-egress" }
+          },
+          {
+            "type": "k8s.podsContainLog",
+            "description": "App logs show database timeout",
+            "selector": "app=fider",
+            "contains": "timeout",
+            "since_seconds": 300
+          },
+          {
+            "type": "http.get",
+            "description": "Health endpoint is not healthy",
+            "url": "http://network-isolation.localhost:8080/_health",
+            "expect": { "status_not": [200] }
+          }
+        ],
+        "health": [
+          {
+            "type": "k8s.podsContainLog",
+            "description": "Timeout symptoms persist",
+            "selector": "app=fider",
+            "contains": "timeout",
+            "since_seconds": 60
+          }
+        ]
+      }
+    }
+  }
 }

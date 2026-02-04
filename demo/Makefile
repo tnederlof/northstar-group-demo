@@ -7,6 +7,8 @@
 
 # Variables
 SCENARIO ?=
+STAGE ?=
+TYPE ?=
 KUBE_CONTEXT ?= kind-fider-demo
 SHELL := /bin/bash
 
@@ -26,7 +28,7 @@ help: ## Show this help
 	@echo "Usage: make <target> [SCENARIO=<path>]"
 	@echo ""
 	@echo "Scenario Management:"
-	@grep -E '^(list-|describe-|validate-).*:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-25s %s\n", $$1, $$2}'
+	@grep -E '^(list-|describe-|validate-|ui-).*:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-25s %s\n", $$1, $$2}'
 	@echo ""
 	@echo "SRE Track:"
 	@grep -E '^sre-.*:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-25s %s\n", $$1, $$2}'
@@ -68,9 +70,18 @@ sre-cluster-down: ## Delete Kind cluster
 	@kind delete cluster --name fider-demo
 
 .PHONY: sre-setup
-sre-setup: sre-prereqs sre-cluster-up ## Full SRE setup (prereqs + cluster)
-	@echo "Installing Gateway API and Envoy Gateway..."
+sre-setup: sre-prereqs sre-cluster-up ## Full SRE setup (prereqs + cluster + gateway)
+	@echo "Installing Gateway API CRDs..."
 	@kubectl --context=$(KUBE_CONTEXT) apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.2.0/standard-install.yaml
+	@echo "Installing Envoy Gateway controller..."
+	@helm upgrade --install envoy-gateway oci://docker.io/envoyproxy/gateway-helm \
+		--kube-context=$(KUBE_CONTEXT) \
+		--version v1.2.4 \
+		--namespace envoy-gateway-system --create-namespace \
+		--skip-crds \
+		--wait --timeout 5m
+	@echo "Applying shared Gateway resources..."
+	@kubectl --context=$(KUBE_CONTEXT) apply -f $(SRE_DIR)/base/gateway.yaml
 	@echo "SRE environment ready!"
 
 .PHONY: sre-demo
@@ -88,9 +99,19 @@ sre-reset: ## Reset a scenario (down + up)
 	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
 	@KUBE_CONTEXT=$(KUBE_CONTEXT) $(SRE_DIR)/scripts/demo.sh reset $(SCENARIO)
 
-.PHONY: sre-teardown-all
-sre-teardown-all: ## Remove all demo namespaces
+.PHONY: sre-down-all
+sre-down-all: ## Remove all demo namespaces
 	@KUBE_CONTEXT=$(KUBE_CONTEXT) $(SRE_DIR)/scripts/demo.sh down-all
+
+.PHONY: sre-verify
+sre-verify: ## Verify scenario deployment (SCENARIO required)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@KUBE_CONTEXT=$(KUBE_CONTEXT) $(SHARED_DIR)/scripts/run-checks.sh sre $(SCENARIO) verify $(if $(STAGE),--stage $(STAGE))
+
+.PHONY: sre-health
+sre-health: ## Health check a scenario (SCENARIO required)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@KUBE_CONTEXT=$(KUBE_CONTEXT) $(SHARED_DIR)/scripts/run-checks.sh sre $(SCENARIO) health $(if $(STAGE),--stage $(STAGE))
 
 .PHONY: sre-status
 sre-status: ## Show cluster status
@@ -134,6 +155,58 @@ eng-scenario-clean: ## Remove scenario worktree (SCENARIO required)
 	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
 	@$(ENG_DIR)/scripts/worktree.sh remove $(SCENARIO)
 
+.PHONY: eng-up
+eng-up: ## Start a scenario (SCENARIO required)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@$(ENG_DIR)/scripts/demo.sh up $(SCENARIO)
+
+.PHONY: eng-down
+eng-down: ## Stop a scenario (SCENARIO required)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@$(ENG_DIR)/scripts/demo.sh down $(SCENARIO)
+
+.PHONY: eng-reset
+eng-reset: ## Reset a scenario (down + worktree reset + up)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@$(ENG_DIR)/scripts/demo.sh reset $(SCENARIO)
+
+.PHONY: eng-sniff
+eng-sniff: ## Follow scenario logs (SCENARIO required)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@$(ENG_DIR)/scripts/demo.sh sniff $(SCENARIO)
+
+.PHONY: eng-status
+eng-status: ## Show scenario status (SCENARIO required)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@$(ENG_DIR)/scripts/demo.sh status $(SCENARIO)
+
+.PHONY: eng-verify
+eng-verify: ## Verify scenario deployment (SCENARIO required)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@$(SHARED_DIR)/scripts/run-checks.sh engineering $(SCENARIO) verify $(if $(STAGE),--stage $(STAGE))
+
+.PHONY: eng-health
+eng-health: ## Health check a scenario (SCENARIO required)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@$(SHARED_DIR)/scripts/run-checks.sh engineering $(SCENARIO) health $(if $(STAGE),--stage $(STAGE))
+
 .PHONY: eng-setup
 eng-setup: eng-prereqs eng-edge-up ## Full Engineering setup (prereqs + edge proxy)
 	@echo "Engineering environment ready!"
+
+# ============================================================================
+# UI Verification (Cross-track)
+# ============================================================================
+.PHONY: ui-setup
+ui-setup: ## Install Playwright dependencies for UI verification
+	@echo "Installing Playwright dependencies..."
+	@cd $(DEMO_DIR)/ui && npm install
+	@echo "Installing Playwright browsers..."
+	@cd $(DEMO_DIR)/ui && npx playwright install chromium
+	@echo "UI verification ready!"
+
+.PHONY: ui-verify
+ui-verify: ## Run UI/Playwright checks only (TYPE and SCENARIO required)
+	@test -n "$(TYPE)" || (echo "Error: TYPE is required (sre or engineering)" && exit 1)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@$(SHARED_DIR)/scripts/run-checks.sh $(TYPE) $(SCENARIO) verify --only playwright $(if $(STAGE),--stage $(STAGE))

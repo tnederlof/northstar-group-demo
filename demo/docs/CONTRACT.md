@@ -4,36 +4,42 @@ This document defines the contracts and conventions used across demo scenarios t
 
 ## URL Contract
 
-All scenarios expose services at consistent URLs to simplify presentation and documentation.
+All scenarios expose services at consistent URLs following the pattern:
+
+```
+http://<slug>.localhost:8080
+```
+
+Where `<slug>` is the second component of the scenario path (e.g., `bad-rollout` from `platform/bad-rollout`).
 
 ### SRE Track
 
 When running in kind cluster:
 
-| Service | URL | Purpose |
-|---------|-----|---------|
-| Fider Application | `http://fider.local` | Main application |
-| Envoy Gateway Admin | `http://localhost:19001` | Gateway administration |
-| Grafana | `http://grafana.local` | Metrics visualization |
-| Prometheus | `http://prometheus.local` | Metrics collection |
+| Scenario | URL |
+|----------|-----|
+| `platform/healthy` | `http://healthy.localhost:8080` |
+| `platform/bad-rollout` | `http://bad-rollout.localhost:8080` |
+| `platform/resource-exhaustion` | `http://resource-exhaustion.localhost:8080` |
 
-**Note**: Requires `/etc/hosts` entries:
-```
-127.0.0.1 fider.local
-127.0.0.1 grafana.local
-127.0.0.1 prometheus.local
-```
+Routing is handled by:
+- Kind cluster with hostPort 8080 mapped to nodePort 30080
+- Envoy Gateway listening on `*.localhost` hostname
+- Per-scenario HTTPRoute resources
+
+**Note**: `.localhost` domains resolve to 127.0.0.1 automatically (no `/etc/hosts` entries needed).
 
 ### Engineering Track
 
 When running with Docker Compose:
 
-| Service | URL | Purpose |
-|---------|-----|---------|
-| Fider Application (HTTP) | `http://localhost` | Main application (port 80) |
-| Fider Application (HTTPS) | `https://localhost` | Main application with TLS (port 443) |
-| PostgreSQL | `localhost:5432` | Database |
-| Traefik Dashboard | `http://localhost:8080` | Edge proxy dashboard |
+| Scenario | URL |
+|----------|-----|
+| `backend/ui-regression` | `http://ui-regression.localhost:8080` |
+
+Routing is handled by:
+- Traefik edge proxy on host port 8080
+- Per-scenario container labels defining routing rules
 
 ## Environment Variable Contract
 

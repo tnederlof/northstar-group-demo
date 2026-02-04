@@ -17,5 +17,41 @@
     "Check handler for nil pointer access",
     "Add appropriate null checks",
     "Run tests to verify fix"
-  ]
+  ],
+  "checks": {
+    "version": 1,
+    "default_stage": "broken",
+    "stages": {
+      "broken": {
+        "verify": [
+          {
+            "type": "http.get",
+            "description": "Health endpoint works (basic infra ok)",
+            "url": "http://ui-regression.localhost:8080/_health",
+            "expect": { "status": [200] }
+          },
+          {
+            "type": "playwright.run",
+            "description": "UI shows error state",
+            "suite": "eng/ui-regression-broken"
+          }
+        ]
+      },
+      "fixed": {
+        "verify": [
+          {
+            "type": "http.get",
+            "description": "Health endpoint works",
+            "url": "http://ui-regression.localhost:8080/_health",
+            "expect": { "status": [200] }
+          },
+          {
+            "type": "playwright.run",
+            "description": "UI works correctly after fix",
+            "suite": "eng/ui-regression-fixed"
+          }
+        ]
+      }
+    }
+  }
 }

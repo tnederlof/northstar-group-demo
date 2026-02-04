@@ -16,5 +16,35 @@
     "Check pod status for OOMKilled",
     "Review resource limits in deployment",
     "Patch deployment with appropriate memory limits"
-  ]
+  ],
+  "checks": {
+    "version": 1,
+    "default_stage": "broken",
+    "stages": {
+      "broken": {
+        "verify": [
+          {
+            "type": "k8s.podTerminationReason",
+            "description": "Pod has OOMKilled termination reason",
+            "selector": "app=fider",
+            "reason": "OOMKilled"
+          },
+          {
+            "type": "k8s.podRestartCount",
+            "description": "Pod has restarted due to resource issues",
+            "selector": "app=fider",
+            "min_restarts": 1
+          }
+        ],
+        "health": [
+          {
+            "type": "k8s.podRestartCount",
+            "description": "Restart count continues to increase",
+            "selector": "app=fider",
+            "min_restarts": 1
+          }
+        ]
+      }
+    }
+  }
 }

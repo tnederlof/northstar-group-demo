@@ -16,5 +16,35 @@
     "Check ServiceMonitor selector labels",
     "Verify metrics port is exposed in Service",
     "Match labels between Service and ServiceMonitor"
-  ]
+  ],
+  "checks": {
+    "version": 1,
+    "default_stage": "broken",
+    "stages": {
+      "broken": {
+        "verify": [
+          {
+            "type": "http.get",
+            "description": "App is healthy (metrics issue doesn't break app)",
+            "url": "http://missing-metrics.localhost:8080/_health",
+            "expect": { "status": [200] }
+          },
+          {
+            "type": "k8s.serviceMissingPort",
+            "description": "Service is missing the metrics port",
+            "name": "fider",
+            "port_name": "metrics"
+          }
+        ],
+        "health": [
+          {
+            "type": "http.get",
+            "description": "App still healthy",
+            "url": "http://missing-metrics.localhost:8080/_health",
+            "expect": { "status": [200] }
+          }
+        ]
+      }
+    }
+  }
 }

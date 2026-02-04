@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Test results and reports
+test-results/
+playwright-report/
+.playwright/
+
+# Local state
+*.local

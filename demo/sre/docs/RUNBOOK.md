@@ -39,33 +39,25 @@ This will:
 
 ## Quick Start
 
-To run a complete demo scenario:
+To deploy a demo scenario:
 
 ```bash
 make sre-demo SCENARIO=platform/bad-rollout
 ```
 
-This single command handles:
-- Pre-demo verification
-- Scenario deployment
-- Health checks
-- Demo readiness confirmation
+This command deploys the scenario (creates namespace, applies kustomize overlay, runs migrations, seeds data).
+
+**Note**: `sre-demo` is deploy-only. Use `sre-verify` and `sre-health` separately for validation.
 
 ## Pre-Demo Verification
 
-Before starting your presentation, verify the environment is ready:
+Before starting your presentation, verify the deployment is correct:
 
 ```bash
 make sre-verify SCENARIO=platform/bad-rollout
 ```
 
-This checks:
-- Cluster connectivity
-- Gateway API resources
-- Scenario prerequisites
-- Service health
-
-Expected output: All checks pass with green ✓ marks.
+This runs scenario-specific checks defined in the scenario manifest. For "broken" scenarios like `bad-rollout`, it verifies the breakage is present (not that the app is healthy).
 
 ## During the Demo
 
@@ -133,21 +125,26 @@ This:
 After the demo, clean up resources:
 
 ```bash
-make sre-teardown SCENARIO=platform/bad-rollout
+make sre-down SCENARIO=platform/bad-rollout
 ```
 
-### Full Environment Teardown
+### Teardown All Demo Namespaces
 
-To completely remove the kind cluster:
+To remove all demo namespaces (keeps cluster intact):
 
 ```bash
-make sre-teardown-all
+make sre-down-all
 ```
 
-This deletes:
-- The entire kind cluster
-- All deployed resources
-- Local state files
+### Full Cluster Teardown
+
+To completely delete the kind cluster:
+
+```bash
+make sre-cluster-down
+```
+
+This deletes the entire kind cluster and all deployed resources.
 
 ## Troubleshooting
 
@@ -222,10 +219,11 @@ Recommended flow for presentations:
 
 | Scenario | Path | Focus Area |
 |----------|------|------------|
+| Healthy | `platform/healthy` | Working baseline for verification |
 | Bad Rollout | `platform/bad-rollout` | Deployment failures, rollback |
-| Traffic Split | `platform/traffic-split` | Canary deployments, progressive delivery |
-| Config Change | `platform/config-change` | ConfigMap updates, pod restarts |
-| Scale Event | `platform/scale-event` | HPA, resource limits |
+| Resource Exhaustion | `platform/resource-exhaustion` | OOMKilled pods, memory limits |
+| Network Isolation | `platform/network-isolation` | NetworkPolicy blocking database |
+| Missing Metrics | `platform/missing-metrics` | ServiceMonitor misconfiguration |
 
 ## Tips for Presenters
 

@@ -25,20 +25,23 @@ jobs:
       - name: Setup SRE environment
         run: make sre-setup
 
-      - name: Create kind cluster
-        run: make sre-cluster-up
+      - name: Deploy healthy scenario
+        run: make sre-demo SCENARIO=platform/healthy
 
-      - name: Deploy demo scenario
-        run: make sre-demo SCENARIO=platform/bad-rollout
+      - name: Wait for deployment to be ready
+        run: |
+          echo "Waiting for fider deployment to be available..."
+          kubectl --context=kind-fider-demo -n demo-healthy wait --for=condition=available \
+            deployment/fider --timeout=180s
 
       - name: Verify scenario deployment
-        run: make sre-verify SCENARIO=platform/bad-rollout
+        run: make sre-verify SCENARIO=platform/healthy
 
       - name: Health check
-        run: make sre-health SCENARIO=platform/bad-rollout
+        run: make sre-health SCENARIO=platform/healthy
 
       - name: Teardown scenario
-        run: make sre-teardown-all
+        run: make sre-down-all
         if: always()
 
       - name: Delete kind cluster
