@@ -161,12 +161,21 @@ scenario_get_url_host() {
     scenario_get_field "url_host"
 }
 
-# Get base URL from loaded scenario (http://<url_host>:8080)
+# Get base URL from loaded scenario (http://<url_host>:<port>)
+# Uses track-specific hardcoded ports
 scenario_get_base_url() {
     local url_host
     url_host=$(scenario_get_url_host)
     if [[ -n "$url_host" ]]; then
-        echo "http://$url_host:8080"
+        local port=""
+        if [[ "$SCENARIO_TYPE" == "sre" ]]; then
+            port="8080"
+        elif [[ "$SCENARIO_TYPE" == "engineering" ]]; then
+            port="8082"
+        else
+            port="8080"  # fallback
+        fi
+        echo "http://$url_host:$port"
     fi
 }
 

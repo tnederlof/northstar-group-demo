@@ -25,20 +25,75 @@ ENG_DIR := $(DEMO_DIR)/engineering
 help: ## Show this help
 	@echo "Northstar Group Demo Commands"
 	@echo ""
-	@echo "Usage: make <target> [SCENARIO=<path>]"
+	@echo "=== Golden Path (Start Here) ==="
+	@echo ""
+	@echo "User Flow:"
+	@grep -E '^(setup|verify|run|reset|reset-all|doctor):.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-25s %s\n", $$1, $$2}'
+	@echo ""
+	@echo "=== Advanced Commands ==="
 	@echo ""
 	@echo "Scenario Management:"
-	@grep -E '^(list-|describe-|validate-|ui-).*:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-25s %s\n", $$1, $$2}'
+	@grep -E '^(list-|describe-|validate-|ui-|health).*:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-25s %s\n", $$1, $$2}'
 	@echo ""
-	@echo "SRE Track:"
+	@echo "SRE Track (Advanced):"
 	@grep -E '^sre-.*:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-25s %s\n", $$1, $$2}'
 	@echo ""
-	@echo "Engineering Track:"
+	@echo "Engineering Track (Advanced):"
 	@grep -E '^eng-.*:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-25s %s\n", $$1, $$2}'
+
+# ============================================================================
+# User Flow (Golden Path)
+# ============================================================================
+.PHONY: setup
+setup: ## One-time setup (installs UI testing dependencies)
+	@$(SHARED_DIR)/scripts/democtl.sh setup
+
+.PHONY: verify
+verify: ## Check all prerequisites (SRE + Engineering + UI)
+	@$(SHARED_DIR)/scripts/democtl.sh verify
+
+.PHONY: run
+run: ## Run a scenario (auto-detects track, ensures runtime)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && echo "Usage: make run SCENARIO=<track>/<slug>" && exit 1)
+	@$(SHARED_DIR)/scripts/democtl.sh run $(SCENARIO)
+
+.PHONY: reset
+reset: ## Reset a scenario (down + up)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && echo "Usage: make reset SCENARIO=<track>/<slug>" && exit 1)
+	@$(SHARED_DIR)/scripts/democtl.sh reset $(SCENARIO)
+
+.PHONY: reset-all
+reset-all: ## Master reset (requires FORCE=true, removes all runtimes)
+	@$(SHARED_DIR)/scripts/democtl.sh reset-all
+
+.PHONY: doctor
+doctor: ## Show status of all runtimes (non-failing)
+	@$(SHARED_DIR)/scripts/democtl.sh doctor
+
+# Convenience aliases for discoverability
+.PHONY: sre-run
+sre-run: ## (Alias) Run an SRE scenario
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@$(SHARED_DIR)/scripts/democtl.sh run $(SCENARIO)
+
+.PHONY: eng-run
+eng-run: ## (Alias) Run an Engineering scenario
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@$(SHARED_DIR)/scripts/democtl.sh run $(SCENARIO)
 
 # ============================================================================
 # Scenario Management
 # ============================================================================
+.PHONY: health
+health: ## Run health checks on a scenario (SCENARIO required)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@if [ -d "$(SRE_DIR)/scenarios/$(SCENARIO)" ]; then \
+		make sre-health SCENARIO=$(SCENARIO); \
+	elif [ -d "$(ENG_DIR)/scenarios/$(SCENARIO)" ]; then \
+		make eng-health SCENARIO=$(SCENARIO); \
+	else \
+		echo "Error: Scenario not found: $(SCENARIO)"; exit 1; \
+	fi
 .PHONY: list-scenarios
 list-scenarios: ## List all available scenarios
 	@$(SHARED_DIR)/scripts/validate-scenarios.sh list
@@ -200,7 +255,7 @@ eng-setup: eng-prereqs eng-edge-up ## Full Engineering setup (prereqs + edge pro
 .PHONY: ui-setup
 ui-setup: ## Install Playwright dependencies for UI verification
 	@echo "Installing Playwright dependencies..."
-	@cd $(DEMO_DIR)/ui && npm install
+	@cd $(DEMO_DIR)/ui && npm ci
 	@echo "Installing Playwright browsers..."
 	@cd $(DEMO_DIR)/ui && npx playwright install chromium
 	@echo "UI verification ready!"

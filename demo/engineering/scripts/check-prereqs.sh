@@ -21,14 +21,33 @@ check_command() {
     fi
 }
 
+# Check docker compose specifically (subcommand, not a standalone command)
+check_docker_compose() {
+    if command -v docker &> /dev/null && docker compose version &> /dev/null 2>&1; then
+        echo -e "${GREEN}✓${NC} docker-compose found"
+    else
+        echo -e "${RED}✗${NC} docker-compose not found"
+        ((ERRORS++))
+    fi
+}
+
 check_port() {
     local port="$1"
+    local name="${2:-$port}"
     
     if ! lsof -i ":$port" &> /dev/null; then
-        echo -e "${GREEN}✓${NC} Port $port is available"
+        echo -e "${GREEN}✓${NC} $name (port $port) is available"
     else
-        echo -e "${RED}✗${NC} Port $port is in use"
-        ((ERRORS++))
+        local process
+        process=$(lsof -i ":$port" -t 2>/dev/null | head -1 || echo "unknown")
+        if [[ "$process" != "unknown" ]]; then
+            local cmd
+            cmd=$(ps -p "$process" -o comm= 2>/dev/null || echo "unknown")
+            echo -e "${GREEN}ℹ${NC} $name (port $port) is in use by PID $process ($cmd)"
+        else
+            echo -e "${GREEN}ℹ${NC} $name (port $port) is in use"
+        fi
+        echo "   This is only an issue if you're about to start the Engineering runtime."
     fi
 }
 
@@ -37,7 +56,7 @@ echo ""
 
 echo "Required commands:"
 check_command docker
-check_command "docker compose" "docker-compose"
+check_docker_compose
 check_command git
 check_command go
 check_command node
@@ -51,7 +70,8 @@ check_command golangci-lint "golangci-lint (for linting)"
 
 echo ""
 echo "Port availability:"
-check_port 8080
+check_port 8082 "Engineering HTTP"
+check_port 8083 "Engineering Dashboard"
 
 echo ""
 echo "Docker status:"

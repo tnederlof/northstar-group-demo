@@ -27,7 +27,7 @@
           {
             "type": "http.get",
             "description": "Health endpoint works (basic infra ok)",
-            "url": "http://ui-regression.localhost:8080/_health",
+            "url": "http://ui-regression.localhost:8082/_health",
             "expect": { "status": [200] }
           },
           {
@@ -42,7 +42,7 @@
           {
             "type": "http.get",
             "description": "Health endpoint works",
-            "url": "http://ui-regression.localhost:8080/_health",
+            "url": "http://ui-regression.localhost:8082/_health",
             "expect": { "status": [200] }
           },
           {

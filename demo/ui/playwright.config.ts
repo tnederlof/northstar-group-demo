@@ -35,8 +35,8 @@ export default defineConfig({
   },
 
   use: {
-    // Base URL from environment (set by run-checks.sh)
-    baseURL: process.env.BASE_URL || 'http://localhost:8080',
+    // Base URL from environment (set by run-checks.sh with track-specific port)
+    baseURL: process.env.BASE_URL,
     
     // Capture artifacts on failure
     trace: 'on-first-retry',

@@ -26,12 +26,21 @@ check_command() {
 
 check_port() {
     local port="$1"
+    local name="${2:-$port}"
     
     if ! lsof -i ":$port" &> /dev/null; then
-        echo -e "${GREEN}✓${NC} Port $port is available"
+        echo -e "${GREEN}✓${NC} $name (port $port) is available"
     else
-        echo -e "${RED}✗${NC} Port $port is in use"
-        ((ERRORS++))
+        local process
+        process=$(lsof -i ":$port" -t 2>/dev/null | head -1 || echo "unknown")
+        if [[ "$process" != "unknown" ]]; then
+            local cmd
+            cmd=$(ps -p "$process" -o comm= 2>/dev/null || echo "unknown")
+            echo -e "${GREEN}ℹ${NC} $name (port $port) is in use by PID $process ($cmd)"
+        else
+            echo -e "${GREEN}ℹ${NC} $name (port $port) is in use"
+        fi
+        echo "   This is only an issue if you're about to start the SRE runtime."
     fi
 }
 
@@ -51,7 +60,7 @@ check_command helm "helm (for Envoy Gateway)" false
 
 echo ""
 echo "Port availability:"
-check_port 8080
+check_port 8080 "SRE HTTP"
 
 echo ""
 echo "Docker status:"

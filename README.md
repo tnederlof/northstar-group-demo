@@ -7,45 +7,36 @@ A dual-track demo repository showcasing debugging and development workflows with
 
 ## Quick Start
 
+New to the demo? Follow the **Golden Path** (3-4 commands):
+
+```bash
+# 1. One-time setup
+make setup
+
+# 2. Verify prerequisites
+make verify
+
+# 3. Run a scenario (auto-detects track and starts runtime)
+make run SCENARIO=platform/bad-rollout  # SRE (Kubernetes)
+# OR
+make run SCENARIO=backend/ui-regression  # Engineering (Docker Compose)
+
+# 4. Clean up
+make reset-all FORCE=true
+```
+
+**SRE scenarios** run at `http://<slug>.localhost:8080`  
+**Engineering scenarios** run at `http://<slug>.localhost:8082`
+
+ℹ️ **Both tracks can run simultaneously!** See [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) for details.
+
 ### Prerequisites
 
 | Track | Required | Optional |
 |-------|----------|----------|
 | **SRE** | Docker, kind, kubectl, jq, curl | helm |
-|| **Engineering** | Docker, git, go (1.25+), node (24+), npm | golangci-lint |
-
-### SRE Track
-
-```bash
-# Setup (one-time)
-make sre-setup
-
-# Deploy a broken scenario
-make sre-demo SCENARIO=platform/bad-rollout
-
-# Access at http://bad-rollout.localhost:8080
-
-# Teardown
-make sre-down SCENARIO=platform/bad-rollout
-```
-
-### Engineering Track
-
-```bash
-# Setup (one-time)
-make eng-setup
-
-# Initialize scenario worktree
-make eng-scenario-init SCENARIO=backend/ui-regression
-
-# Start scenario stack
-make eng-up SCENARIO=backend/ui-regression
-
-# Access at http://ui-regression.localhost:8080
-
-# Teardown
-make eng-down SCENARIO=backend/ui-regression
-```
+| **Engineering** | Docker, git, go (1.21+), node (18+), npm | golangci-lint |
+| **UI Testing** | Node.js (18+) | - |
 
 ## Available Scenarios
 
@@ -69,9 +60,10 @@ make eng-down SCENARIO=backend/ui-regression
 
 ## Key Invariants
 
-- **URL Pattern**: `http://<slug>.localhost:8080`
+- **SRE URL Pattern**: `http://<slug>.localhost:8080`
+- **Engineering URL Pattern**: `http://<slug>.localhost:8082`
 - **Demo Login**: `/__demo/login/<persona>?key=<DEMO_LOGIN_KEY>`
-- **Port 8080**: Only one track can run at a time
+- **Both tracks can run simultaneously** (different ports)
 
 ### Demo Personas
 

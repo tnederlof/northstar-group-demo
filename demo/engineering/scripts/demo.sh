@@ -120,7 +120,7 @@ cmd_up() {
     
     echo ""
     echo "Scenario started!"
-    echo "Access at: http://$slug.localhost:8080"
+    echo "Access at: http://$slug.localhost:8082"
 }
 
 cmd_down() {

@@ -4,15 +4,11 @@ This document defines the contracts and conventions used across demo scenarios t
 
 ## URL Contract
 
-All scenarios expose services at consistent URLs following the pattern:
-
-```
-http://<slug>.localhost:8080
-```
-
-Where `<slug>` is the second component of the scenario path (e.g., `bad-rollout` from `platform/bad-rollout`).
+Scenarios expose services at consistent URLs with **per-track ports**:
 
 ### SRE Track
+
+**Pattern**: `http://<slug>.localhost:8080` (default)
 
 When running in kind cluster:
 
@@ -23,7 +19,7 @@ When running in kind cluster:
 | `platform/resource-exhaustion` | `http://resource-exhaustion.localhost:8080` |
 
 Routing is handled by:
-- Kind cluster with hostPort 8080 mapped to nodePort 30080
+- Kind cluster with configurable hostPort (default 8080) mapped to nodePort 30080
 - Envoy Gateway listening on `*.localhost` hostname
 - Per-scenario HTTPRoute resources
 
@@ -31,15 +27,27 @@ Routing is handled by:
 
 ### Engineering Track
 
+**Pattern**: `http://<slug>.localhost:8082` (default)
+
 When running with Docker Compose:
 
 | Scenario | URL |
 |----------|-----|
-| `backend/ui-regression` | `http://ui-regression.localhost:8080` |
+| `backend/ui-regression` | `http://ui-regression.localhost:8082` |
 
 Routing is handled by:
-- Traefik edge proxy on host port 8080
+- Traefik edge proxy on configurable host port (default 8082)
 - Per-scenario container labels defining routing rules
+
+### Port Configuration
+
+The demo uses fixed ports:
+
+- **SRE HTTP**: 8080
+- **Engineering HTTP**: 8082
+- **Engineering Dashboard**: 8083 (Traefik)
+
+**Both tracks can run simultaneously** because they use different ports.
 
 ## Environment Variable Contract
 

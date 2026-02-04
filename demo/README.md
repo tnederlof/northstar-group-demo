@@ -38,48 +38,47 @@ Welcome to the Northstar Group Demo! This directory contains two distinct demo t
 
 ## Quick Reference
 
-### SRE Track Commands
+### Golden Path (Recommended)
 
 ```bash
-# One-time setup (creates cluster + installs Gateway API + Envoy Gateway)
-make sre-setup
+# One-time setup
+make setup
 
-# Deploy a scenario
-make sre-demo SCENARIO=platform/bad-rollout
+# Verify prerequisites
+make verify
 
-# Verify deployment (runs scenario-specific checks)
-make sre-verify SCENARIO=platform/bad-rollout
+# Run any scenario (auto-detects track)
+make run SCENARIO=platform/bad-rollout    # SRE at :8080
+make run SCENARIO=backend/ui-regression   # Engineering at :8082
 
-# Health check (observational)
-make sre-health SCENARIO=platform/bad-rollout
+# Check health
+make health SCENARIO=<track>/<slug>
 
-# Reset scenario
-make sre-reset SCENARIO=platform/bad-rollout
+# Reset
+make reset SCENARIO=<track>/<slug>
+make reset-all FORCE=true  # Clean up everything
 
-# Teardown
-make sre-down-all
-make sre-cluster-down  # Full cluster deletion
+# View status
+make doctor
 ```
 
-### Engineering Track Commands
+### Advanced: Track-Specific Commands
 
+**SRE Track:**
 ```bash
-# One-time setup (starts Traefik edge proxy)
-make eng-setup
+make sre-setup          # Manual setup
+make sre-demo SCENARIO=platform/bad-rollout
+make sre-verify SCENARIO=platform/bad-rollout
+make sre-reset SCENARIO=platform/bad-rollout
+make sre-down-all
+```
 
-# Setup a scenario worktree
+**Engineering Track:**
+```bash
+make eng-setup          # Manual setup
 make eng-scenario-init SCENARIO=backend/ui-regression
-
-# Start the app
 make eng-up SCENARIO=backend/ui-regression
-
-# Verify deployment (runs scenario-specific checks)
 make eng-verify SCENARIO=backend/ui-regression
-
-# Monitor logs
-make eng-sniff SCENARIO=backend/ui-regression
-
-# Stop the app
 make eng-down SCENARIO=backend/ui-regression
 ```
 

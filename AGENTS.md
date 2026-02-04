@@ -13,15 +13,28 @@ Dual-track demo repository showcasing Warp workflows. Two runtimes (SRE: Kuberne
 ## Key Invariants
 
 - Single source of truth: `demo/shared/contract/`
-- URL contract: `http://<slug>.localhost:8080`
+- SRE URL contract: `http://<slug>.localhost:8080`
+- Engineering URL contract: `http://<slug>.localhost:8082`
 - Scenario paths: always `<track>/<slug>` (2 levels)
 - Scenarios are manifest-driven: `scenario.json` required
+- Both tracks can run simultaneously
 
 ## Common Tasks
 
+### Golden Path (Recommended)
+
+- Setup: `make setup`
+- Verify: `make verify`
+- Run any scenario: `make run SCENARIO=<track>/<slug>`
+- Reset: `make reset SCENARIO=<track>/<slug>`
+- Clean up: `make reset-all FORCE=true`
+- Status: `make doctor`
+
+### Advanced Commands
+
 - List scenarios: `make list-scenarios`
 - Run SRE demo: `make sre-demo SCENARIO=platform/bad-rollout`
-- Run engineering demo: `make eng-ci SCENARIO=...` && `make eng-up SCENARIO=...`
+- Run engineering demo: `make eng-up SCENARIO=...`
 - Validate conformance: `make validate-scenarios`
 
 ## Related Docs

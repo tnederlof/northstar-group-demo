@@ -71,6 +71,16 @@ fi
 # shellcheck source=/dev/null
 source "$GLOBAL_SECRETS"
 
+# Determine HTTP port based on track
+if [[ "$TRACK" == "sre" ]]; then
+    HTTP_PORT="8080"
+elif [[ "$TRACK" == "engineering" ]]; then
+    HTTP_PORT="8082"
+else
+    echo "Error: Unknown track: $TRACK" >&2
+    exit 1
+fi
+
 # Create output directory
 mkdir -p "$OUTPUT_DIR"
 
@@ -102,6 +112,10 @@ mkdir -p "$OUTPUT_DIR"
             case "$VALUE" in
                 *"<slug>"*)
                     VALUE="${VALUE//<slug>/$SLUG}"
+                    VALUE="${VALUE//<http_port>/$HTTP_PORT}"
+                    ;;
+                *"<http_port>"*)
+                    VALUE="${VALUE//<http_port>/$HTTP_PORT}"
                     ;;
                 "<generated>")
                     case "$KEY" in

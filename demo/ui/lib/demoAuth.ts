@@ -27,7 +27,7 @@ interface DemoLoginOptions {
  * ```ts
  * await demoLogin({
  *   page,
- *   baseURL: 'http://healthy.localhost:8080',
+ *   baseURL: process.env.BASE_URL,  // e.g., 'http://healthy.localhost:8080' for SRE
  *   persona: 'admin',
  *   loginKey: process.env.DEMO_LOGIN_KEY,
  * });
@@ -64,7 +64,7 @@ export async function demoLogin({
  */
 export function getTestEnv() {
   return {
-    baseURL: process.env.BASE_URL || 'http://localhost:8080',
+    baseURL: process.env.BASE_URL!,  // Required: set by run-checks.sh with track-specific port
     scenario: process.env.SCENARIO || '',
     stage: process.env.STAGE || '',
     demoLoginKey: process.env.DEMO_LOGIN_KEY || 'northstar-demo-key',
