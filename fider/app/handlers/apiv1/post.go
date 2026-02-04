@@ -80,20 +80,20 @@ func CreatePost() web.HandlerFunc {
 			return c.Failure(err)
 		}
 
-		setAttachments := &cmd.SetAttachments{Post: newPost.Result, Attachments: action.Attachments}
-		addVote := &cmd.AddVote{Post: newPost.Result, User: c.User()}
-		if err = bus.Dispatch(c, setAttachments, addVote); err != nil {
-			return c.Failure(err)
-		}
+	setAttachments := &cmd.SetAttachments{Post: newPost.Result, Attachments: action.Attachments}
+	addVote := &cmd.AddVote{Post: newPost.Result, User: c.User()}
+	if err = bus.Dispatch(c, setAttachments, addVote); err != nil {
+		return c.Failure(err)
+	}
 
-		if env.Config.PostCreationWithTagsEnabled {
-			for _, tag := range action.Tags {
-				assignTag := &cmd.AssignTag{Tag: tag, Post: newPost.Result}
-				if err := bus.Dispatch(c, assignTag); err != nil {
-					return c.Failure(err)
-				}
+	if !env.Config.PostCreationWithTagsEnabled {
+		for _, tag := range action.Tags {
+			assignTag := &cmd.AssignTag{Tag: tag, Post: newPost.Result}
+			if err := bus.Dispatch(c, assignTag); err != nil {
+				return c.Failure(err)
 			}
 		}
+	}
 
 		c.Enqueue(tasks.NotifyAboutNewPost(newPost.Result))
 
