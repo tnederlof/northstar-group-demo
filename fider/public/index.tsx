@@ -48,15 +48,13 @@ const bootstrapApp = (i18n: I18n) => {
     const root = createRoot(rootElement)
     root.render(
       <React.StrictMode>
-        <ErrorBoundary onError={logProductionError}>
-          <I18nProvider i18n={i18n}>
-            <FiderContext.Provider value={fider}>
-              <DevBanner />
-              <ReadOnlyNotice />
-              <Suspense fallback={<Loading />}>{React.createElement(component, fider.session.props)}</Suspense>
-            </FiderContext.Provider>
-          </I18nProvider>
-        </ErrorBoundary>
+        <I18nProvider i18n={i18n}>
+          <FiderContext.Provider value={fider}>
+            <DevBanner />
+            <ReadOnlyNotice />
+            <Suspense fallback={<Loading />}>{React.createElement(component, fider.session.props)}</Suspense>
+          </FiderContext.Provider>
+        </I18nProvider>
       </React.StrictMode>
     )
   }
