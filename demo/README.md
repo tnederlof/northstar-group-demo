@@ -51,11 +51,15 @@ make verify
 make run SCENARIO=platform/bad-rollout    # SRE at :8080
 make run SCENARIO=backend/ui-regression   # Engineering at :8082
 
+# Workshop flow (Engineering only)
+# Edit code in: demo/engineering/scenarios/<track>/<slug>/worktree/fider/
+make reset SCENARIO=<scenario>       # Reset to broken baseline
+make fix-it SCENARIO=<scenario>      # Jump to solved baseline (escape hatch)
+
 # Check health
 make health SCENARIO=<track>/<slug>
 
-# Reset
-make reset SCENARIO=<track>/<slug>
+# Reset all
 make reset-all FORCE=true  # Clean up everything
 
 # View status

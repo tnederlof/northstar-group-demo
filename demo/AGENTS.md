@@ -22,6 +22,12 @@ Required keys in `scenario.json`:
 - `seed` - seed data to use
 - `reset_strategy` - how to reset the scenario
 
+Engineering scenarios also require:
+- `git.maintenance_branch` - mutable branch for updates (e.g., `scenario/backend/ui-regression`)
+- `git.broken_ref` - stable tag for broken baseline (e.g., `scenario/backend/ui-regression/broken`)
+- `git.solved_ref` - stable tag for solved baseline (e.g., `scenario/backend/ui-regression/solved`)
+- `git.work_branch` - local branch for workshop commits (e.g., `ws/backend/ui-regression`)
+
 ## Common Tasks
 
 - List scenarios: `make list-scenarios`

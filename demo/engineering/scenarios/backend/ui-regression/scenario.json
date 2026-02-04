@@ -6,7 +6,12 @@
   "url_host": "ui-regression.localhost",
   "seed": true,
   "reset_strategy": "worktree-reset",
-  "branch": "demo/backend/ui-regression",
+  "git": {
+    "maintenance_branch": "scenario/backend/ui-regression",
+    "broken_ref": "scenario/backend/ui-regression/broken",
+    "solved_ref": "scenario/backend/ui-regression/solved",
+    "work_branch": "ws/backend/ui-regression"
+  },
   "description": "A missing null check in a backend handler causes 500 errors under specific conditions.",
   "symptoms": [
     "500 errors on certain API endpoints",

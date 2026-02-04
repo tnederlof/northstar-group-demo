@@ -5,7 +5,8 @@
 # Commands:
 #   up       - Start scenario (render env, ensure worktree, start compose)
 #   down     - Stop scenario (compose down)
-#   reset    - down + up (full reset)
+#   reset    - down + reset worktree to broken + up
+#   fix-it   - down + reset worktree to solved + up
 #   sniff    - Follow compose logs
 #   status   - Show compose status
 
@@ -23,13 +24,16 @@ Usage: $0 <command> [scenario]
 Commands:
   up <scenario>       Start a scenario (e.g., backend/ui-regression)
   down <scenario>     Stop a scenario
-  reset <scenario>    Full reset (down + up)
+  reset <scenario>    Full reset (down + reset to broken + up)
+  fix-it <scenario>   Jump to solved state (down + reset to solved + up)
   sniff <scenario>    Follow compose logs
   status <scenario>   Show compose status
 
 Examples:
   $0 up backend/ui-regression
   $0 down backend/ui-regression
+  $0 reset backend/ui-regression
+  FORCE=true $0 fix-it backend/ui-regression
   $0 sniff backend/ui-regression
 EOF
     exit 1
@@ -149,9 +153,21 @@ cmd_reset() {
     local scenario="$1"
     cmd_down "$scenario"
     
-    # Also reset the worktree
-    echo "Resetting worktree..."
-    "$SCRIPT_DIR/worktree.sh" reset "$scenario"
+    # Reset the worktree to broken baseline
+    echo "Resetting worktree to broken baseline..."
+    "$SCRIPT_DIR/worktree.sh" reset-broken "$scenario"
+    
+    sleep 2
+    cmd_up "$scenario"
+}
+
+cmd_fix_it() {
+    local scenario="$1"
+    cmd_down "$scenario"
+    
+    # Reset the worktree to solved baseline
+    echo "Resetting worktree to solved baseline..."
+    "$SCRIPT_DIR/worktree.sh" fix-it "$scenario"
     
     sleep 2
     cmd_up "$scenario"
@@ -217,6 +233,10 @@ case "$1" in
     reset)
         [[ $# -lt 2 ]] && usage
         cmd_reset "$2"
+        ;;
+    fix-it)
+        [[ $# -lt 2 ]] && usage
+        cmd_fix_it "$2"
         ;;
     sniff)
         [[ $# -lt 2 ]] && usage

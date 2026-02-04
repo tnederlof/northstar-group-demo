@@ -21,7 +21,12 @@ make run SCENARIO=platform/bad-rollout  # SRE (Kubernetes)
 # OR
 make run SCENARIO=backend/ui-regression  # Engineering (Docker Compose)
 
-# 4. Clean up
+# 4. Workshop flow (Engineering scenarios only)
+# Edit code in: demo/engineering/scenarios/backend/ui-regression/worktree/fider/
+make reset SCENARIO=backend/ui-regression  # Restart at broken state
+make fix-it SCENARIO=backend/ui-regression  # Jump to solved state (escape hatch)
+
+# 5. Clean up
 make reset-all FORCE=true
 ```
 

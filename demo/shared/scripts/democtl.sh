@@ -420,6 +420,54 @@ cmd_reset() {
 }
 
 # ============================================================================
+# Command: fix-it
+# ============================================================================
+
+cmd_fix_it() {
+    local scenario="$1"
+    
+    if [[ -z "$scenario" ]]; then
+        log_error "SCENARIO is required"
+        echo "Usage: make fix-it SCENARIO=<track>/<slug>"
+        return 1
+    fi
+    
+    log_section "Applying Fix-It for Scenario: $scenario"
+    
+    # Load scenario manifest to determine type
+    if ! scenario_load "" "$scenario"; then
+        log_error "Failed to load scenario manifest"
+        return 1
+    fi
+    
+    local scenario_type="$SCENARIO_TYPE"
+    
+    if [[ "$scenario_type" == "sre" ]]; then
+        log_warn "Fix-it is not implemented for SRE scenarios"
+        log_info "SRE scenarios use kubectl apply to fix issues"
+        return 1
+    elif [[ "$scenario_type" == "engineering" ]]; then
+        "$ENG_DIR/scripts/demo.sh" fix-it "$scenario"
+        
+        # Run verification in fixed stage
+        echo ""
+        log_info "Running verification checks for fixed state..."
+        if KUBE_CONTEXT="$KUBE_CONTEXT" "$SHARED_DIR/scripts/run-checks.sh" "$scenario_type" "$scenario" verify --stage fixed; then
+            log_success "Fix-it verification passed"
+        else
+            log_warn "Fix-it verification failed (scenario may still be starting)"
+        fi
+    else
+        log_error "Unknown scenario type: $scenario_type"
+        return 1
+    fi
+    
+    log_success "Fix-it complete!"
+    echo ""
+    log_info "The scenario is now in the solved state"
+}
+
+# ============================================================================
 # Command: reset-all
 # ============================================================================
 
@@ -461,14 +509,16 @@ cmd_reset_all() {
     log_info "Removing Docker network..."
     docker network rm northstar-demo 2>/dev/null || true
     
-    # Remove worktrees
-    if [[ -d "$WORKTREE_DIR" ]]; then
-        log_info "Removing worktrees..."
-        find "$WORKTREE_DIR" -mindepth 1 -maxdepth 1 -type d | while read -r wt; do
-            "$ENG_DIR/scripts/worktree.sh" remove "$(basename "$wt")" 2>/dev/null || true
-        done
-        rm -rf "$WORKTREE_DIR"
-    fi
+    # Remove worktrees using git worktree list
+    log_info "Removing engineering worktrees..."
+    cd "$DEMO_DIR/.."
+    git worktree list --porcelain | grep -A 2 "demo/engineering/scenarios" | grep "^worktree" | cut -d' ' -f2 | while read -r wt_path; do
+        if [[ -n "$wt_path" && -d "$wt_path" ]]; then
+            echo "  Removing worktree: $wt_path"
+            git worktree remove "$wt_path" --force 2>/dev/null || rm -rf "$wt_path"
+        fi
+    done
+    git worktree prune 2>/dev/null || true
     
     # SRE cleanup
     log_info "Removing SRE namespaces..."
@@ -565,6 +615,7 @@ main() {
         echo "  verify            - Check all prerequisites"
         echo "  run <scenario>    - Run a scenario (auto-detect track)"
         echo "  reset <scenario>  - Reset a scenario"
+        echo "  fix-it <scenario> - Jump to solved state (engineering only)"
         echo "  reset-all         - Master reset (FORCE=true required)"
         echo "  doctor            - Show status"
         exit 1
@@ -584,6 +635,9 @@ main() {
             ;;
         reset)
             cmd_reset "$@"
+            ;;
+        fix-it)
+            cmd_fix_it "$@"
             ;;
         reset-all)
             cmd_reset_all "$@"

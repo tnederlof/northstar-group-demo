@@ -19,6 +19,16 @@ Dual-track demo repository showcasing Warp workflows. Two runtimes (SRE: Kuberne
 - Scenarios are manifest-driven: `scenario.json` required
 - Both tracks can run simultaneously
 
+### Engineering Scenario Git Ref Contract
+
+- **Maintenance branch**: `scenario/<track>/<slug>` (mutable, for rebasing)
+- **Broken baseline tag**: `scenario/<track>/<slug>/broken` (stable, immutable)
+- **Solved baseline tag**: `scenario/<track>/<slug>/solved` (stable, immutable)
+- **Workshop branch**: `ws/<track>/<slug>` (local only, per-participant)
+- **Worktree location**: `demo/engineering/scenarios/<track>/<slug>/worktree/`
+- **Automation relies on tags**, not branches - tags are the single source of truth
+- Workshop commits stay on local `ws/` branches and don't affect baselines
+
 ## Common Tasks
 
 ### Golden Path (Recommended)
@@ -26,7 +36,8 @@ Dual-track demo repository showcasing Warp workflows. Two runtimes (SRE: Kuberne
 - Setup: `make setup`
 - Verify: `make verify`
 - Run any scenario: `make run SCENARIO=<track>/<slug>`
-- Reset: `make reset SCENARIO=<track>/<slug>`
+- Reset: `make reset SCENARIO=<track>/<slug>` (returns to broken baseline)
+- Fix-it: `make fix-it SCENARIO=<track>/<slug>` (jump to solved baseline, engineering only)
 - Clean up: `make reset-all FORCE=true`
 - Status: `make doctor`
 

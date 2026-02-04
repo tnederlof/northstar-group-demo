@@ -1,0 +1,52 @@
+# Feature Flag Rollout Scenario - Docker Compose
+# Run from scenario directory: docker compose up -d
+
+services:
+  fider:
+    build:
+      context: ./worktree/fider
+      dockerfile: Dockerfile
+    container_name: northstar-feature-flag-rollout-fider
+    env_file:
+      - ../../../.state/engineering/feature-flag-rollout/runtime.env
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - DEMO_LOGIN_KEY=${DEMO_LOGIN_KEY}
+      - POST_CREATION_WITH_TAGS_ENABLED=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - northstar-demo
+      - feature-flag-rollout-internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=northstar-demo"
+      - "traefik.http.routers.fider-feature-flag-rollout.rule=Host(`feature-flag-rollout.localhost`)"
+      - "traefik.http.services.fider-feature-flag-rollout.loadbalancer.server.port=3000"
+
+  postgres:
+    image: postgres:17
+    container_name: northstar-feature-flag-rollout-postgres
+    environment:
+      POSTGRES_USER: fider
+      POSTGRES_PASSWORD: fider
+      POSTGRES_DB: fider
+    volumes:
+      - feature-flag-rollout-pgdata:/var/lib/postgresql/data
+    networks:
+      - feature-flag-rollout-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fider"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+networks:
+  northstar-demo:
+    external: true
+  feature-flag-rollout-internal:
+    driver: bridge
+
+volumes:
+  feature-flag-rollout-pgdata:

@@ -11,16 +11,35 @@ Decide whether your scenario fits the **SRE track** or **Engineering track**:
 - **SRE Track**: Infrastructure, Kubernetes, deployments, scaling
 - **Engineering Track**: Application code, bugs, testing, CI/CD
 
-### 2. Create Scenario Branch
+### 2. Create Scenario Branch and Tags
 
 For **SRE scenarios**:
 ```bash
 git checkout -b demo/sre/your-scenario-name main
 ```
 
-For **Engineering scenarios**:
+For **Engineering scenarios**, use the scenario maintenance branch model:
 ```bash
-git checkout -b demo/engineering/your-scenario-name main
+# Create maintenance branch from main
+git checkout -b scenario/<track>/<slug> main
+
+# Make changes for broken state
+# ... edit code to introduce the bug ...
+git commit -m "<track>/<slug>: introduce bug"
+
+# Tag the broken baseline
+git tag -a scenario/<track>/<slug>/broken -m "<track>/<slug>: broken baseline"
+
+# Make changes for solved state
+# ... edit code to fix the bug ...
+git commit -m "<track>/<slug>: fix bug"
+
+# Tag the solved baseline
+git tag -a scenario/<track>/<slug>/solved -m "<track>/<slug>: solved baseline"
+
+# Push branch and tags
+git push origin scenario/<track>/<slug>
+git push origin --tags
 ```
 
 ### 3. Implement the Scenario
@@ -43,18 +62,56 @@ demo/sre/scenarios/your-scenario-name/
 
 #### For Engineering Scenarios
 
-Introduce code changes in the `fider/` directory:
+Create a scenario directory and manifest:
 
 ```bash
-# Make your changes to introduce a bug or demonstrate a feature
+# Create scenario directory
+mkdir -p demo/engineering/scenarios/<track>/<slug>
+
+# Create scenario.json manifest
+cat > demo/engineering/scenarios/<track>/<slug>/scenario.json <<EOF
+{
+  "track": "<track>",
+  "slug": "<slug>",
+  "title": "Your Scenario Title",
+  "type": "engineering",
+  "url_host": "<slug>.localhost",
+  "seed": true,
+  "reset_strategy": "worktree-reset",
+  "git": {
+    "maintenance_branch": "scenario/<track>/<slug>",
+    "broken_ref": "scenario/<track>/<slug>/broken",
+    "solved_ref": "scenario/<track>/<slug>/solved",
+    "work_branch": "ws/<track>/<slug>"
+  },
+  "description": "Brief description",
+  "symptoms": ["Symptom 1", "Symptom 2"],
+  "fix_hints": ["Hint 1", "Hint 2"],
+  "checks": {
+    "version": 1,
+    "default_stage": "broken",
+    "stages": {
+      "broken": {
+        "verify": [{"type": "http.get", "url": "http://<slug>.localhost:8082/_health", "expect": {"status": [500]}}]
+      },
+      "fixed": {
+        "verify": [{"type": "http.get", "url": "http://<slug>.localhost:8082/_health", "expect": {"status": [200]}}]
+      }
+    }
+  }
+}
+EOF
+
+# Introduce code changes in fider/ on the scenario branch
 vim fider/app/handlers/your_handler.go
-
-# Add or modify tests
 vim fider/app/handlers/your_handler_test.go
-
-# Create scenario README
-vim demo/engineering/scenarios/your-scenario-name/README.md
 ```
+
+**Important conformance rules**:
+- Automation must rely on tags (`scenario/<track>/<slug>/broken` and `/solved`), not mutable branches
+- Worktrees are created from the broken tag onto a local `ws/<track>/<slug>` branch
+- The maintenance branch is where you rebase/update when `main` evolves
+- Tags represent stable waypoints that `make run/reset/fix-it` depend on
 
 ### 4. Document the Scenario
 
@@ -114,17 +171,20 @@ make sre-reset SCENARIO=your-scenario-name
 #### Engineering Scenarios
 
 ```bash
-# Verify CI checks run
-make eng-ci SCENARIO=your-scenario-name
+# Verify the scenario runs and creates worktree from broken tag
+make run SCENARIO=<track>/<slug>
 
-# Verify the app starts
-make eng-up SCENARIO=your-scenario-name
+# Verify reset to broken works
+make reset SCENARIO=<track>/<slug>
 
-# If applicable, run E2E tests
-E2E=true make eng-ci SCENARIO=your-scenario-name
+# Verify fix-it jumps to solved tag
+make fix-it SCENARIO=<track>/<slug>
+
+# Verify CI checks in worktree
+make eng-ci SCENARIO=<track>/<slug>
 
 # Verify teardown
-make eng-down SCENARIO=your-scenario-name
+make eng-down SCENARIO=<track>/<slug>
 ```
 
 ### 6. PR Checklist

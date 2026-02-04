@@ -30,25 +30,40 @@ npx playwright --version
 
 ## Worktree Setup
 
-The Engineering track uses Git worktrees to isolate scenarios. Initialize a scenario:
+The Engineering track uses Git worktrees to isolate scenarios. The `make run` command automatically creates worktrees:
 
 ```bash
-make eng-scenario-init SCENARIO=backend/api-regression
+make run SCENARIO=backend/ui-regression
 ```
 
 This creates:
-- A Git worktree in `.worktrees/backend/api-regression`
-- Checks out the scenario branch
-- Prepares the environment
+- A Git worktree in `demo/engineering/scenarios/backend/ui-regression/worktree/`
+- Checks out from the `scenario/backend/ui-regression/broken` tag
+- Creates a local workshop branch `ws/backend/ui-regression`
+- Starts the Docker Compose runtime
 
 ### Working in Worktrees
 
 ```bash
 # Navigate to the worktree
-cd .worktrees/backend/api-regression
+cd demo/engineering/scenarios/backend/ui-regression/worktree/fider/
 
 # Make changes, run tests, etc.
 # Your main working directory remains unchanged
+# Commits stay on your local ws/backend/ui-regression branch
+```
+
+### Workshop Commands
+
+```bash
+# Reset to broken baseline (start over)
+make reset SCENARIO=backend/ui-regression
+
+# Jump to solved baseline (escape hatch)
+make fix-it SCENARIO=backend/ui-regression
+
+# Override dirty worktree warnings
+FORCE=true make reset SCENARIO=backend/ui-regression
 ```
 
 ## CI Checks
@@ -113,7 +128,7 @@ This starts:
 - Any scenario-specific services
 
 The application will be available at:
-- **URL**: `http://<slug>.localhost:8080` (e.g., `http://ui-regression.localhost:8080`)
+- **URL**: `http://<slug>.localhost:8082` (e.g., `http://ui-regression.localhost:8082`)
 
 ### Verify the Deployment
 

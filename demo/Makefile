@@ -62,6 +62,11 @@ reset: ## Reset a scenario (down + up)
 	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && echo "Usage: make reset SCENARIO=<track>/<slug>" && exit 1)
 	@$(SHARED_DIR)/scripts/democtl.sh reset $(SCENARIO)
 
+.PHONY: fix-it
+fix-it: ## Jump to solved state (engineering scenarios only)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && echo "Usage: make fix-it SCENARIO=<track>/<slug>" && exit 1)
+	@$(SHARED_DIR)/scripts/democtl.sh fix-it $(SCENARIO)
+
 .PHONY: reset-all
 reset-all: ## Master reset (requires FORCE=true, removes all runtimes)
 	@$(SHARED_DIR)/scripts/democtl.sh reset-all
@@ -225,6 +230,16 @@ eng-reset: ## Reset a scenario (down + worktree reset + up)
 	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
 	@$(ENG_DIR)/scripts/demo.sh reset $(SCENARIO)
 
+.PHONY: eng-fix-it
+eng-fix-it: ## Jump to solved state (down + reset to solved + up)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@$(ENG_DIR)/scripts/demo.sh fix-it $(SCENARIO)
+
+.PHONY: eng-reset-broken
+eng-reset-broken: ## Reset worktree to broken baseline (SCENARIO required)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@$(ENG_DIR)/scripts/worktree.sh reset-broken $(SCENARIO)
+
 .PHONY: eng-sniff
 eng-sniff: ## Follow scenario logs (SCENARIO required)
 	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
@@ -244,6 +259,11 @@ eng-verify: ## Verify scenario deployment (SCENARIO required)
 eng-health: ## Health check a scenario (SCENARIO required)
 	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
 	@$(SHARED_DIR)/scripts/run-checks.sh engineering $(SCENARIO) health $(if $(STAGE),--stage $(STAGE))
+
+.PHONY: eng-ci
+eng-ci: ## Run CI checks (lint/test) in worktree (SCENARIO required)
+	@test -n "$(SCENARIO)" || (echo "Error: SCENARIO is required" && exit 1)
+	@$(ENG_DIR)/scripts/ci-check.sh $(SCENARIO)
 
 .PHONY: eng-setup
 eng-setup: eng-prereqs eng-edge-up ## Full Engineering setup (prereqs + edge proxy)

@@ -1,0 +1,62 @@
+{
+  "track": "frontend",
+  "slug": "missing-fallback",
+  "title": "Missing Fallback - Error Boundary Removed",
+  "type": "engineering",
+  "url_host": "missing-fallback.localhost",
+  "seed": true,
+  "reset_strategy": "worktree-reset",
+  "git": {
+    "maintenance_branch": "scenario/frontend/missing-fallback",
+    "broken_ref": "scenario/frontend/missing-fallback/broken",
+    "solved_ref": "scenario/frontend/missing-fallback/solved",
+    "work_branch": "ws/frontend/missing-fallback"
+  },
+  "description": "A removed error boundary causes the UI to white-screen on component errors.",
+  "symptoms": [
+    "UI shows blank white screen",
+    "Browser console shows uncaught error",
+    "No user-friendly error message displayed"
+  ],
+  "fix_hints": [
+    "Add error boundary wrapper to catch component errors",
+    "Ensure graceful degradation of UI",
+    "Provide user-friendly error message"
+  ],
+  "checks": {
+    "version": 1,
+    "default_stage": "broken",
+    "stages": {
+      "broken": {
+        "verify": [
+          {
+            "type": "http.get",
+            "description": "Health endpoint works (backend ok)",
+            "url": "http://missing-fallback.localhost:8082/_health",
+            "expect": { "status": [200] }
+          },
+          {
+            "type": "playwright.run",
+            "description": "UI white-screens without error boundary",
+            "suite": "eng/missing-fallback-broken"
+          }
+        ]
+      },
+      "fixed": {
+        "verify": [
+          {
+            "type": "http.get",
+            "description": "Health endpoint works",
+            "url": "http://missing-fallback.localhost:8082/_health",
+            "expect": { "status": [200] }
+          },
+          {
+            "type": "playwright.run",
+            "description": "UI shows error boundary after fix",
+            "suite": "eng/missing-fallback-fixed"
+          }
+        ]
+      }
+    }
+  }
+}

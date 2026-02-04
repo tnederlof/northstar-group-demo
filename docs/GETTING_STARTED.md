@@ -73,6 +73,28 @@ make run SCENARIO=backend/ui-regression
 
 Visit: **http://ui-regression.localhost:8082**
 
+**Engineering Workshop Flow:**
+
+For engineering scenarios, `make run` creates a git worktree you can edit:
+
+```bash
+# 1. Run creates worktree at demo/engineering/scenarios/backend/ui-regression/worktree/
+make run SCENARIO=backend/ui-regression
+
+# 2. Edit code in the worktree, commit changes
+cd demo/engineering/scenarios/backend/ui-regression/worktree/fider/
+# make your fixes...
+git add . && git commit -m "fix: add null check"
+
+# 3. Reset to broken baseline to start over
+make reset SCENARIO=backend/ui-regression
+
+# 4. Or jump to solved state (escape hatch)
+make fix-it SCENARIO=backend/ui-regression
+```
+
+ℹ️ **Workshop commits**: Your commits stay on a local `ws/backend/ui-regression` branch. Use `FORCE=true` to override dirty worktree warnings.
+
 ### 4. Clean Up
 
 When you're done:
