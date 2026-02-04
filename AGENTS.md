@@ -29,6 +29,29 @@ Dual-track demo repository showcasing Warp workflows. Two runtimes (SRE: Kuberne
 - **Automation relies on tags**, not branches - tags are the single source of truth
 - Workshop commits stay on local `ws/` branches and don't affect baselines
 
+### Keeping Scenarios Current
+
+**IMPORTANT**: When `main` changes, scenario branches must be rebased to stay current:
+
+```bash
+# For each scenario:
+git checkout scenario/<track>/<slug>
+git rebase main
+
+# Update tags to point to rebased commits (broken=HEAD~1, solved=HEAD)
+git tag -f -a scenario/<track>/<slug>/broken HEAD~1 -m "<track>/<slug>: broken baseline"
+git tag -f -a scenario/<track>/<slug>/solved HEAD -m "<track>/<slug>: solved baseline"
+
+# Force push (tags are automation API, this is expected)
+git push origin scenario/<track>/<slug> --force-with-lease
+git push origin --tags --force
+```
+
+This is required after:
+- Infrastructure changes to `main`
+- Removing/adding scenarios
+- Updates to shared code or configurations
+
 ## Common Tasks
 
 ### Golden Path (Recommended)

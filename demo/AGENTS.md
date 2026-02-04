@@ -28,6 +28,18 @@ Engineering scenarios also require:
 - `git.solved_ref` - stable tag for solved baseline (e.g., `scenario/backend/ui-regression/solved`)
 - `git.work_branch` - local branch for workshop commits (e.g., `ws/backend/ui-regression`)
 
+## Scenario Maintenance
+
+When `main` changes (infrastructure updates, scenario additions/removals), rebase scenarios:
+
+```bash
+git checkout scenario/<track>/<slug> && git rebase main
+git tag -f -a scenario/<track>/<slug>/broken HEAD~1 -m "broken baseline"
+git tag -f -a scenario/<track>/<slug>/solved HEAD -m "solved baseline"
+git push origin scenario/<track>/<slug> --force-with-lease
+git push origin --tags --force
+```
+
 ## Common Tasks
 
 - List scenarios: `make list-scenarios`

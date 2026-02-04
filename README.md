@@ -84,6 +84,23 @@ make reset-all FORCE=true
 - [Architecture](docs/ARCHITECTURE.md) - Technical overview
 - [SRE Runbook](demo/sre/docs/RUNBOOK.md) - SRE track details
 - [Engineering Runbook](demo/engineering/docs/RUNBOOK.md) - Engineering track details
+- [Contributing Guide](docs/CONTRIBUTING.md) - How to add/maintain scenarios
+
+## Maintaining Scenarios
+
+Engineering scenarios use git branches and tags. When `main` is updated (infrastructure changes, new scenarios, etc.), scenario branches must be rebased:
+
+```bash
+# For each scenario (ui-regression, missing-fallback, feature-flag-rollout):
+git checkout scenario/<track>/<slug>
+git rebase main
+git tag -f -a scenario/<track>/<slug>/broken HEAD~1 -m "broken baseline"
+git tag -f -a scenario/<track>/<slug>/solved HEAD -m "solved baseline"
+git push origin scenario/<track>/<slug> --force-with-lease
+git push origin --tags --force
+```
+
+See [AGENTS.md](AGENTS.md) for more details on the git ref contract.
 
 ## Repository Structure
 
