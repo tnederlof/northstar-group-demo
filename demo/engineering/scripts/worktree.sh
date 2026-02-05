@@ -92,6 +92,12 @@ cmd_init() {
     
     cd "$REPO_ROOT"
     
+    # Clean up any orphaned workshop branch (worktree was removed but branch remains)
+    if git show-ref --verify --quiet "refs/heads/$work_branch"; then
+        echo "  Cleaning up existing workshop branch: $work_branch"
+        git branch -D "$work_branch" 2>/dev/null || true
+    fi
+    
     # Create worktree on local workshop branch starting from broken tag
     git worktree add -b "$work_branch" "$worktree_dir" "$broken_ref"
     
