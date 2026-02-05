@@ -8,7 +8,7 @@ services:
       dockerfile: Dockerfile
     container_name: northstar-missing-fallback-fider
     env_file:
-      - ../../../.state/engineering/missing-fallback/runtime.env
+      - ../../../../.state/engineering/missing-fallback/runtime.env
     environment:
       - JWT_SECRET=${JWT_SECRET}
       - DEMO_LOGIN_KEY=${DEMO_LOGIN_KEY}
