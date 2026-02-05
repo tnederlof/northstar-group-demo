@@ -2,7 +2,7 @@ import "@fider/assets/styles/index.scss"
 
 import React, { Suspense } from "react"
 import { createRoot } from "react-dom/client"
-import { ErrorBoundary, Loader, ReadOnlyNotice, DevBanner } from "@fider/components"
+import { Loader, ReadOnlyNotice, DevBanner } from "@fider/components"
 import { classSet, Fider, FiderContext, actions, activateI18N } from "@fider/services"
 
 import { I18n } from "@lingui/core"
@@ -14,13 +14,6 @@ const Loading = () => (
     <Loader />
   </div>
 )
-
-const logProductionError = (err: Error) => {
-  if (Fider.isProduction()) {
-    console.error(err)
-    actions.logError(`react.ErrorBoundary: ${err.message}`, err)
-  }
-}
 
 window.addEventListener("unhandledrejection", (evt: PromiseRejectionEvent) => {
   if (evt.reason instanceof Error) {
