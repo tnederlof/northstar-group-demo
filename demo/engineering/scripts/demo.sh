@@ -122,6 +122,20 @@ cmd_up() {
         docker compose --env-file "$env_file" up -d --build
     )
     
+    # Apply seed data if configured
+    local scenario_json="$scenario_dir/scenario.json"
+    if [[ -f "$scenario_json" ]]; then
+        local should_seed
+        should_seed=$(jq -r '.seed // false' "$scenario_json")
+        if [[ "$should_seed" == "true" ]]; then
+            echo ""
+            echo "Applying seed data..."
+            # Wait a moment for postgres to be ready
+            sleep 2
+            "$SHARED_DIR/scripts/apply-seed.sh" compose "$scenario"
+        fi
+    fi
+    
     echo ""
     echo "Scenario started!"
     echo "Access at: http://$slug.localhost:8082"
