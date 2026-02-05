@@ -8,7 +8,7 @@ services:
       dockerfile: Dockerfile
     container_name: northstar-feature-flag-rollout-fider
     env_file:
-      - ../../../.state/engineering/feature-flag-rollout/runtime.env
+      - ../../../../.state/engineering/feature-flag-rollout/runtime.env
     environment:
       - JWT_SECRET=${JWT_SECRET}
       - DEMO_LOGIN_KEY=${DEMO_LOGIN_KEY}
