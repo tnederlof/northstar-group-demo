@@ -20,6 +20,9 @@ test.describe('eng/ui-regression-broken', () => {
   test.skip(stage === 'fixed', 'Skipping broken tests when stage is fixed');
 
   test('app shows 500 error under specific conditions', async ({ page }) => {
+    // Wait for app to be ready
+    await page.waitForTimeout(2000);
+    
     // Navigate to home - basic page should load
     await page.goto('/');
     
@@ -37,13 +40,16 @@ test.describe('eng/ui-regression-broken', () => {
     expect(response?.status()).toBe(200);
   });
 
-  test('specific API endpoint returns 500', async ({ request }) => {
+  test('specific API endpoint returns 500', async ({ page }) => {
     // The ui-regression scenario has a specific endpoint that fails
     // This test should be updated based on the actual buggy endpoint
     
+    // Wait for app to be ready
+    await page.waitForTimeout(2000);
+    
     // For now, verify health works but note the scenario is "broken"
-    const healthResponse = await request.get('/_health');
-    expect(healthResponse.status()).toBe(200);
+    const response = await page.goto('/_health');
+    expect(response?.status()).toBe(200);
     
     // TODO: Add specific endpoint test when scenario details are finalized
   });
@@ -65,9 +71,12 @@ test.describe('eng/ui-regression-fixed', () => {
     expect(hasError).toBe(false);
   });
 
-  test('health endpoint returns 200', async ({ request }) => {
-    const response = await request.get('/_health');
-    expect(response.status()).toBe(200);
+  test('health endpoint returns 200', async ({ page }) => {
+    // Wait for app to be ready
+    await page.waitForTimeout(2000);
+    
+    const response = await page.goto('/_health');
+    expect(response?.status()).toBe(200);
   });
 
   test('demo login works after fix', async ({ page }) => {
