@@ -100,14 +100,20 @@ apply_k8s() {
 }
 
 apply_compose() {
-    local project="northstar-$SLUG"
+    local container="northstar-$SLUG-postgres"
     
-    echo "Using Compose project: $project"
+    echo "Using container: $container"
     echo ""
+    
+    # Check if container exists and is running
+    if ! docker ps --filter "name=$container" --format "{{.Names}}" | grep -q "^$container$"; then
+        echo "Error: Container $container is not running" >&2
+        exit 1
+    fi
     
     echo "Executing seed.sql..."
     
-    docker compose -p "$project" exec -T postgres \
+    docker exec -i "$container" \
         psql -U fider -d fider < "$SEED_FILE"
     
     echo ""
