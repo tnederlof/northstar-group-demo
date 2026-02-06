@@ -1,0 +1,32 @@
+# syntax=docker/dockerfile:1
+
+#####################
+### Development Image
+#####################
+# This Dockerfile creates a development environment with both Go and Node.js
+# for working on the Fider codebase with Warp Agent Mode.
+# Matches local Fider fork versions: Go 1.25 + Node.js 24
+
+FROM golang:1.25-bookworm
+
+# Install Node.js 24
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
+    apt-get update && apt-get install -y \
+    nodejs \
+    build-essential \
+    gcc \
+    libc6-dev \
+    ca-certificates \
+    git \
+    curl \
+    jq \
+    && rm -rf /var/lib/apt/lists/*
+
+# Note: Go development tools (air, godotenv, golangci-lint) can be installed
+# in the workspace as needed using 'go install' commands
+
+# Set working directory
+WORKDIR /workspace
+
+# Default command (keep container running)
+CMD ["/bin/bash"]
