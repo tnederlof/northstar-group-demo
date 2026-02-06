@@ -119,9 +119,9 @@ This demo has **two independent tracks** that can run **simultaneously** on the 
 - **Scenarios**:
   - `platform/healthy` - Baseline working application
   - `platform/bad-rollout` - Failed deployment rollout
-  - `platform/resource-exhaustion` - OOMKilled pods
-  - `platform/network-isolation` - Network policy misconfiguration
-  - `platform/missing-metrics` - Observability gaps
+  - `platform/resource-exhaustion` - Memory limits causing OOMKilled pods
+  - `platform/network-isolation` - NetworkPolicy blocking database access
+  - `platform/missing-metrics` - ServiceMonitor configuration issues
 
 ### Engineering Track (Docker Compose)
 

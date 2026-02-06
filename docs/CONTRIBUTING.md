@@ -138,11 +138,9 @@ What's broken or needs improvement?
 What tools or setup is needed?
 
 ## Running the Scenario
-`bash
-make sre-demo SCENARIO=your-scenario-name
-# or
-make eng-up SCENARIO=your-scenario-name
-`
+```bash
+make run SCENARIO=your-scenario-name
+```
 
 ## Expected Outcome
 What should happen when the scenario runs successfully?
@@ -159,13 +157,13 @@ All scenarios must be tested before submission:
 
 ```bash
 # Verify the scenario can be deployed
-make sre-demo SCENARIO=your-scenario-name
+make run SCENARIO=platform/your-scenario-name
 
 # Verify health checks pass
-make sre-health SCENARIO=your-scenario-name
+make health SCENARIO=platform/your-scenario-name
 
 # Verify teardown works
-make sre-reset SCENARIO=your-scenario-name
+make reset SCENARIO=platform/your-scenario-name
 ```
 
 #### Engineering Scenarios
@@ -180,11 +178,8 @@ make reset SCENARIO=<track>/<slug>
 # Verify fix-it jumps to solved tag
 make fix-it SCENARIO=<track>/<slug>
 
-# Verify CI checks in worktree
-make eng-ci SCENARIO=<track>/<slug>
-
 # Verify teardown
-make eng-down SCENARIO=<track>/<slug>
+make reset SCENARIO=<track>/<slug>
 ```
 
 ### 6. PR Checklist

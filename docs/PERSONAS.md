@@ -22,9 +22,9 @@ Alex starts the morning checking cluster health and reviewing alerts. They deplo
 | Scenario | Path | Focus |
 |----------|------|-------|
 | Bad Rollout | `platform/bad-rollout` | Deployment failure and rollback |
-| Traffic Split | `platform/traffic-split` | Canary deployments with Gateway API |
-| Config Change | `platform/config-change` | ConfigMap updates and rolling restarts |
-| Scale Event | `platform/scale-event` | HPA and resource management |
+| Resource Exhaustion | `platform/resource-exhaustion` | Memory limits and OOMKilled pods |
+| Network Isolation | `platform/network-isolation` | NetworkPolicy debugging |
+| Missing Metrics | `platform/missing-metrics` | ServiceMonitor and observability |
 
 ### Alex's Toolbox
 
@@ -62,8 +62,8 @@ Sarah spends her mornings reviewing pull requests and pair programming with juni
 
 | Scenario | Path | Focus |
 |----------|------|-------|
-| API Regression | `backend/api-regression` | Null pointer bugs and defensive coding |
-| Feature Flag Rollout | `backend/feature-flag-rollout` | Progressive feature delivery |
+| UI Regression | `backend/ui-regression` | Null pointer bugs and defensive coding |
+| Feature Flag Rollout | `backend/feature-flag-rollout` | Feature flag inverted logic |
 
 ### Sarah's Toolbox
 
@@ -101,7 +101,7 @@ Marcus works on feature tickets, often involving database changes. He carefully 
 
 | Scenario | Path | Focus |
 |----------|------|-------|
-| API Regression | `backend/api-regression` | Bug fixing and testing |
+| UI Regression | `backend/ui-regression` | Bug fixing and testing |
 
 ### Marcus's Toolbox
 
@@ -139,7 +139,7 @@ Jennifer starts by reviewing design mockups and user stories. She builds React c
 
 | Scenario | Path | Focus |
 |----------|------|-------|
-| Error Boundary | `frontend/error-boundary` | React error handling and UX |
+| Missing Fallback | `frontend/missing-fallback` | React error boundary and graceful degradation |
 
 ### Jennifer's Toolbox
 
@@ -163,22 +163,22 @@ Jennifer starts by reviewing design mockups and user stories. She builds React c
 ### By Experience Level
 
 **Junior Engineers** (1-2 years):
-- Start with: API Regression, Feature Flag Rollout
+- Start with: UI Regression, Feature Flag Rollout
 - Focus: Basic debugging, testing, code review
 
 **Mid-Level Engineers** (3-5 years):
-- Recommended: Error Boundary, Config Change
+- Recommended: Missing Fallback, Network Isolation
 - Focus: Complex debugging, system understanding
 
 **Senior Engineers** (5+ years):
-- Advanced: Bad Rollout, Traffic Split, Scale Event
+- Advanced: Bad Rollout, Resource Exhaustion, Missing Metrics
 - Focus: Architecture, incident response, optimization
 
 ### By Role
 
 **Application Developers**:
-- Backend: API Regression, Feature Flag
-- Frontend: Error Boundary
+- Backend: UI Regression, Feature Flag Rollout
+- Frontend: Missing Fallback
 
 **Infrastructure/Platform**:
 - All SRE Track scenarios
@@ -202,7 +202,7 @@ When presenting, adopt the persona's perspective:
 > "Alex gets paged at 2 AM because the Fider service is returning 500 errors. Using kubectl, Alex quickly diagnoses that the latest deployment introduced a bug..."
 
 **Example for Sarah**:
-> "Sarah is reviewing a PR from a junior engineer. She notices the API handler is missing a null check. Let's see what happens when this code reaches production..."
+> "Sarah is reviewing a PR from a junior engineer. She notices the handler is missing a null check. Let's see what happens when this code reaches production and causes UI errors..."
 
 ### Building Empathy
 

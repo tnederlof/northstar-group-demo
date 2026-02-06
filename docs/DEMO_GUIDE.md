@@ -55,71 +55,71 @@ Is your audience primarily focused on:
 
 **Run Command**:
 ```bash
-make sre-demo SCENARIO=platform/bad-rollout
+make run SCENARIO=platform/bad-rollout
 ```
 
-### Platform/Traffic Split
-**Duration**: 12 minutes
-**Difficulty**: Medium
-**Persona**: Platform Engineer (Alex)
-
-**Scenario**: Demonstrates progressive delivery with canary deployments using Gateway API.
-
-**Key Learning Points**:
-- Canary deployment patterns
-- Traffic routing with Gateway API
-- Gradual rollout strategies
-- Monitoring traffic distribution
-
-**Run Command**:
-```bash
-make sre-demo SCENARIO=platform/traffic-split
-```
-
-### Platform/Config Change
-**Duration**: 10 minutes
-**Difficulty**: Easy
-**Persona**: Platform Engineer (Alex)
-
-**Scenario**: ConfigMap changes causing pod restarts and potential downtime.
-
-**Key Learning Points**:
-- ConfigMap vs Secret management
-- Rolling updates for config changes
-- Zero-downtime deployments
-- Config validation strategies
-
-**Run Command**:
-```bash
-make sre-demo SCENARIO=platform/config-change
-```
-
-### Platform/Scale Event
+### Platform/Resource Exhaustion
 **Duration**: 15 minutes
 **Difficulty**: Hard
 **Persona**: Platform Engineer (Alex)
 
-**Scenario**: Horizontal Pod Autoscaling under load, resource limits and quotas.
+**Scenario**: Memory limits too low causing OOMKilled pods and service degradation.
 
 **Key Learning Points**:
-- HPA configuration
 - Resource requests and limits
-- Load testing strategies
+- Memory profiling and debugging
+- Pod restart patterns
 - Capacity planning
 
 **Run Command**:
 ```bash
-make sre-demo SCENARIO=platform/scale-event
+make run SCENARIO=platform/resource-exhaustion
+```
+
+### Platform/Network Isolation
+**Duration**: 12 minutes
+**Difficulty**: Medium
+**Persona**: Platform Engineer (Alex)
+
+**Scenario**: NetworkPolicy blocking egress to database causing connection failures.
+
+**Key Learning Points**:
+- NetworkPolicy configuration
+- Egress and ingress rules
+- Debugging network connectivity
+- Security vs accessibility tradeoffs
+
+**Run Command**:
+```bash
+make run SCENARIO=platform/network-isolation
+```
+
+### Platform/Missing Metrics
+**Duration**: 10 minutes
+**Difficulty**: Medium
+**Persona**: Platform Engineer (Alex)
+
+**Scenario**: Metrics port not exposed and ServiceMonitor selector mismatch causing observability gaps.
+
+**Key Learning Points**:
+- Prometheus ServiceMonitor configuration
+- Metrics endpoint exposure
+- Label selector troubleshooting
+- Observability best practices
+
+**Run Command**:
+```bash
+make run SCENARIO=platform/missing-metrics
 ```
 
 ## Engineering Track Scenarios
 
-### Backend/API Regression
+### Backend/UI Regression
 **Duration**: 12 minutes
 **Difficulty**: Easy
 **Persona**: Backend Engineer (Sarah or Marcus)
 
-**Scenario**: Missing null check in API handler causes 500 errors.
+**Scenario**: Missing null check in API handler causes 500 errors in the UI.
 
 **Key Learning Points**:
 - Defensive programming
@@ -129,15 +129,15 @@ make sre-demo SCENARIO=platform/scale-event
 
 **Run Command**:
 ```bash
-make eng-up SCENARIO=backend/api-regression
+make run SCENARIO=backend/ui-regression
 ```
 
-### Frontend/Error Boundary
+### Frontend/Missing Fallback
 **Duration**: 12 minutes
 **Difficulty**: Medium
 **Persona**: Frontend Engineer (Jennifer)
 
-**Scenario**: Missing React error boundary causes component crashes.
+**Scenario**: Removed React error boundary causes UI white-screens on component errors.
 
 **Key Learning Points**:
 - React error boundaries
@@ -147,7 +147,7 @@ make eng-up SCENARIO=backend/api-regression
 
 **Run Command**:
 ```bash
-make eng-up SCENARIO=frontend/error-boundary
+make run SCENARIO=frontend/missing-fallback
 ```
 
 ### Backend/Feature Flag Rollout
@@ -165,7 +165,7 @@ make eng-up SCENARIO=frontend/error-boundary
 
 **Run Command**:
 ```bash
-make eng-up SCENARIO=backend/feature-flag-rollout
+make run SCENARIO=backend/feature-flag-rollout
 ```
 
 ## Demo Flow Per Persona
@@ -183,10 +183,11 @@ make eng-up SCENARIO=backend/feature-flag-rollout
 
 **Key Commands**:
 ```bash
-kubectl get pods -n fider
-kubectl describe deployment fider -n fider
-kubectl logs -n fider deployment/fider
-kubectl rollout undo deployment/fider -n fider
+# Use the namespace matching the scenario (demo-<slug>)
+kubectl get pods -n demo-bad-rollout
+kubectl describe deployment fider -n demo-bad-rollout
+kubectl logs -n demo-bad-rollout deployment/fider
+kubectl rollout undo deployment/fider -n demo-bad-rollout
 ```
 
 ### Backend Engineers (Sarah, Marcus) - Engineering Track
@@ -202,9 +203,9 @@ kubectl rollout undo deployment/fider -n fider
 
 **Key Commands**:
 ```bash
-make eng-ci SCENARIO=backend/api-regression
-make eng-up SCENARIO=backend/api-regression
-make eng-sniff SCENARIO=backend/api-regression
+make run SCENARIO=backend/ui-regression
+make reset SCENARIO=backend/ui-regression
+make fix-it SCENARIO=backend/ui-regression
 ```
 
 ### Frontend Engineer (Jennifer) - Engineering Track
@@ -220,8 +221,9 @@ make eng-sniff SCENARIO=backend/api-regression
 
 **Key Commands**:
 ```bash
-make eng-up SCENARIO=frontend/error-boundary
-E2E=true make eng-ci SCENARIO=frontend/error-boundary
+make run SCENARIO=frontend/missing-fallback
+make reset SCENARIO=frontend/missing-fallback
+make fix-it SCENARIO=frontend/missing-fallback
 ```
 
 ## Troubleshooting Common Issues
@@ -231,9 +233,8 @@ E2E=true make eng-ci SCENARIO=frontend/error-boundary
 #### Cluster Won't Start
 ```bash
 # Delete and recreate
-make sre-teardown-all
-make sre-setup
-make sre-cluster-up
+kind delete cluster --name fider-demo
+make run SCENARIO=platform/healthy
 ```
 
 #### Gateway Not Responding
@@ -246,8 +247,8 @@ kubectl logs -n envoy-gateway-system deployment/envoy-gateway
 #### Scenario Won't Deploy
 ```bash
 # Reset scenario
-make sre-reset SCENARIO=platform/bad-rollout
-make sre-demo SCENARIO=platform/bad-rollout
+make reset SCENARIO=platform/bad-rollout
+make run SCENARIO=platform/bad-rollout
 ```
 
 ### Engineering Track
@@ -259,8 +260,8 @@ docker compose ps
 docker compose logs
 
 # Restart
-make eng-down SCENARIO=backend/api-regression
-make eng-up SCENARIO=backend/api-regression
+make reset SCENARIO=backend/ui-regression
+make run SCENARIO=backend/ui-regression
 ```
 
 #### Port Conflicts
@@ -275,7 +276,7 @@ lsof -ti:3000 | xargs kill -9  # Frontend
 # Clean and retry
 go clean -cache
 npm clean-install
-make eng-ci SCENARIO=backend/api-regression
+make run SCENARIO=backend/ui-regression
 ```
 
 ## Best Practices for Presenters
