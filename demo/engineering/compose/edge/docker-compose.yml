@@ -6,7 +6,7 @@
 
 services:
   traefik:
-    image: traefik:v3.0
+    image: traefik:v3.6.1
     container_name: northstar-edge
     command:
       - "--api.insecure=true"
@@ -18,7 +18,7 @@ services:
       - "8082:80"
       - "8083:8080"  # Traefik dashboard
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /Users/trevornederlof/.docker/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - northstar-demo
     restart: unless-stopped

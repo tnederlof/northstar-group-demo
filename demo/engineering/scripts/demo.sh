@@ -62,7 +62,7 @@ ensure_network() {
 # Render environment file for scenario
 render_env() {
     local scenario="$1"
-    echo "Rendering environment for $scenario..."
+    echo "Rendering environment for $scenario..." >&2
     "$SHARED_DIR/scripts/render-env.sh" engineering "$scenario"
 }
 

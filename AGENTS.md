@@ -52,6 +52,36 @@ This is required after:
 - Removing/adding scenarios
 - Updates to shared code or configurations
 
+## Git Workflow
+
+### Infrastructure vs Application Changes
+
+**IMPORTANT**: Infrastructure files (shared demo harness, scripts, compose files outside scenarios) must be modified in `main` only:
+
+**Infrastructure paths (main only)**:
+- `demo/engineering/compose/` - Edge proxy, shared services
+- `demo/sre/base/` - Base Kubernetes manifests
+- `demo/shared/` - Shared scripts and contracts
+- `demo/engineering/scripts/` - Demo automation scripts
+- `demo/sre/scripts/` - SRE automation scripts
+- `Makefile` - Top-level automation
+- `docs/` - Documentation
+
+**Application paths (scenario branches)**:
+- `fider/` - Application code (via worktrees)
+- `demo/engineering/scenarios/<track>/<slug>/docker-compose.yml` - Scenario-specific compose
+- `demo/ui/tests/` - Test specifications
+
+### Setting Up Git Hooks
+
+To prevent accidentally committing infrastructure changes in scenario branches:
+
+```bash
+./scripts/install-hooks.sh
+```
+
+This installs a pre-commit hook that blocks infrastructure changes in `scenario/*` and `ws/*` branches.
+
 ## Common Tasks
 
 ### Golden Path (Recommended)
