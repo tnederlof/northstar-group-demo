@@ -45,8 +45,11 @@ help: ## Show this help
 # User Flow (Golden Path)
 # ============================================================================
 .PHONY: setup
-setup: ## One-time setup (installs UI testing dependencies)
+setup: ## One-time setup (installs UI testing dependencies + git hooks)
 	@$(SHARED_DIR)/scripts/democtl.sh setup
+	@echo ""
+	@echo "Installing git hooks..."
+	@cd $(DEMO_DIR)/.. && ./scripts/install-hooks.sh
 
 .PHONY: verify
 verify: ## Check all prerequisites (SRE + Engineering + UI)

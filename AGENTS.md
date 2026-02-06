@@ -74,13 +74,15 @@ This is required after:
 
 ### Setting Up Git Hooks
 
-To prevent accidentally committing infrastructure changes in scenario branches:
+Git hooks are automatically installed when you run `make setup`. To manually install:
 
 ```bash
 ./scripts/install-hooks.sh
 ```
 
-This installs a pre-commit hook that blocks infrastructure changes in `scenario/*` and `ws/*` branches.
+The pre-commit hook blocks infrastructure changes in `scenario/*` and `ws/*` branches.
+
+**Note**: Git hooks are local to each clone and not tracked in version control. Each contributor must run setup or install hooks manually.
 
 ## Common Tasks
 
