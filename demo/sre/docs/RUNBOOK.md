@@ -21,59 +21,41 @@ make --version
 
 ## One-Time Setup
 
-Perform these steps once before your first demo:
-
-```bash
-# Initialize SRE environment
-make sre-setup
-
-# Create the kind cluster
-make sre-cluster-up
-```
-
-This will:
-- Install Envoy Gateway
-- Configure Gateway API resources
-- Set up namespaces and RBAC
-- Deploy base infrastructure
+The SRE runtime (kind cluster + Envoy Gateway) is created automatically when you first run a scenario. No manual setup required.
 
 ## Quick Start
 
-To deploy a demo scenario:
+To run a demo scenario:
 
 ```bash
-make sre-demo SCENARIO=platform/bad-rollout
+democtl run platform/bad-rollout
 ```
 
-This command deploys the scenario (creates namespace, applies kustomize overlay, runs migrations, seeds data).
-
-**Note**: `sre-demo` is deploy-only. Use `sre-verify` and `sre-health` separately for validation.
+This command:
+- Ensures kind cluster and Envoy Gateway are running
+- Creates namespace
+- Applies Kubernetes manifests
+- Runs verification checks
 
 ## Pre-Demo Verification
 
-Before starting your presentation, verify the deployment is correct:
+Before presenting, verify the deployment:
 
 ```bash
-make sre-verify SCENARIO=platform/bad-rollout
+democtl checks verify platform/bad-rollout
 ```
 
-This runs scenario-specific checks defined in the scenario manifest. For "broken" scenarios like `bad-rollout`, it verifies the breakage is present (not that the app is healthy).
+For "broken" scenarios, this verifies the breakage is present (not that the app is healthy).
 
 ## During the Demo
 
 ### Monitor System Health
 
-Run health checks during the demonstration:
+Run health checks during the demo:
 
 ```bash
-make sre-health SCENARIO=platform/bad-rollout
+democtl checks health platform/bad-rollout
 ```
-
-This shows:
-- Pod status
-- Service endpoints
-- Gateway routes
-- Current traffic distribution
 
 ### Common Scenarios
 
@@ -82,13 +64,13 @@ Demonstrates a broken deployment and rollback:
 
 ```bash
 # Deploy the scenario
-make sre-demo SCENARIO=platform/bad-rollout
+democtl run platform/bad-rollout
 
 # Show the problem (during presentation)
-make sre-health SCENARIO=platform/bad-rollout
+democtl checks health platform/bad-rollout
 
 # Demonstrate rollback (during presentation)
-kubectl rollout undo deployment/fider -n fider
+kubctl rollout undo deployment/fider -n demo-bad-rollout
 ```
 
 #### Traffic Splitting Scenario
@@ -110,41 +92,20 @@ kubectl patch httproute fider-route -n fider --type merge -p '{"spec":{"rules":[
 To reset a scenario between presentations:
 
 ```bash
-make sre-reset SCENARIO=platform/bad-rollout
+democtl reset platform/bad-rollout
 ```
 
-This:
-- Removes scenario-specific resources
-- Resets to baseline state
-- Preserves cluster and core infrastructure
+This deletes and recreates the namespace.
 
 ## Cleanup
 
-### Clean Up a Specific Scenario
+### Clean Up Everything
 
-After the demo, clean up resources:
-
-```bash
-make sre-down SCENARIO=platform/bad-rollout
-```
-
-### Teardown All Demo Namespaces
-
-To remove all demo namespaces (keeps cluster intact):
+To remove all scenarios and the cluster:
 
 ```bash
-make sre-down-all
+democtl reset-all --force
 ```
-
-### Full Cluster Teardown
-
-To completely delete the kind cluster:
-
-```bash
-make sre-cluster-down
-```
-
-This deletes the entire kind cluster and all deployed resources.
 
 ## Troubleshooting
 

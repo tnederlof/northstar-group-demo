@@ -42,59 +42,40 @@ Welcome to the Northstar Group Demo! This directory contains two distinct demo t
 
 ```bash
 # One-time setup
-make setup
+democtl setup
 
 # Verify prerequisites
-make verify
+democtl verify
 
 # Run any scenario (auto-detects track)
-make run SCENARIO=platform/bad-rollout    # SRE at :8080
-make run SCENARIO=backend/ui-regression   # Engineering at :8082
+democtl run platform/bad-rollout      # SRE at :8080
+democtl run backend/ui-regression     # Engineering at :8082
 
 # Workshop flow (Engineering only)
 # Edit code in: demo/engineering/scenarios/<track>/<slug>/worktree/fider/
-make reset SCENARIO=<scenario>       # Reset to broken baseline
-make fix-it SCENARIO=<scenario>      # Jump to solved baseline (escape hatch)
+democtl reset backend/ui-regression   # Reset to broken baseline
+democtl fix-it backend/ui-regression  # Jump to solved baseline
 
 # Check health
-make health SCENARIO=<track>/<slug>
+democtl checks health platform/bad-rollout
 
 # Reset all
-make reset-all FORCE=true  # Clean up everything
+democtl reset-all --force  # Clean up everything
 
 # View status
-make doctor
+democtl doctor
 ```
 
-### Advanced: Track-Specific Commands
-
-**SRE Track:**
-```bash
-make sre-setup          # Manual setup
-make sre-demo SCENARIO=platform/bad-rollout
-make sre-verify SCENARIO=platform/bad-rollout
-make sre-reset SCENARIO=platform/bad-rollout
-make sre-down-all
-```
-
-**Engineering Track:**
-```bash
-make eng-setup          # Manual setup
-make eng-scenario-init SCENARIO=backend/ui-regression
-make eng-up SCENARIO=backend/ui-regression
-make eng-verify SCENARIO=backend/ui-regression
-make eng-down SCENARIO=backend/ui-regression
-```
-
-### Verification Commands
+### Advanced: Stage-Specific Verification
 
 ```bash
-# Run only UI/Playwright checks
-make ui-verify TYPE=sre SCENARIO=platform/healthy
+# Run checks for specific stages
+democtl checks verify platform/bad-rollout --stage broken
+democtl checks verify backend/ui-regression --stage fixed
 
-# Verify with a specific stage
-make sre-verify SCENARIO=platform/bad-rollout STAGE=broken
-make eng-verify SCENARIO=backend/ui-regression STAGE=fixed
+# Run only specific check types
+democtl checks verify platform/bad-rollout --only k8s
+democtl checks verify backend/ui-regression --only playwright
 ```
 
 ## Available Scenarios

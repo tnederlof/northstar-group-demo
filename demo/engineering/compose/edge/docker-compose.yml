@@ -18,7 +18,7 @@ services:
       - "8082:80"
       - "8083:8080"  # Traefik dashboard
     volumes:
-      - /Users/trevornederlof/.docker/run/docker.sock:/var/run/docker.sock:ro
+      - ${DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock:ro
     networks:
       - northstar-demo
     restart: unless-stopped

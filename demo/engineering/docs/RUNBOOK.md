@@ -30,10 +30,10 @@ npx playwright --version
 
 ## Worktree Setup
 
-The Engineering track uses Git worktrees to isolate scenarios. The `make run` command automatically creates worktrees:
+The Engineering track uses Git worktrees to isolate scenarios. `democtl run` automatically creates worktrees:
 
 ```bash
-make run SCENARIO=backend/ui-regression
+democtl run backend/ui-regression
 ```
 
 This creates:
@@ -57,109 +57,71 @@ cd demo/engineering/scenarios/backend/ui-regression/worktree/fider/
 
 ```bash
 # Reset to broken baseline (start over)
-make reset SCENARIO=backend/ui-regression
+democtl reset backend/ui-regression
 
 # Jump to solved baseline (escape hatch)
-make fix-it SCENARIO=backend/ui-regression
-
-# Override dirty worktree warnings
-FORCE=true make reset SCENARIO=backend/ui-regression
+democtl fix-it backend/ui-regression
 ```
 
 ## CI Checks
 
-Run the same checks that CI would run:
+For maintainers: Run CI checks in the worktree manually:
 
 ```bash
-make eng-ci SCENARIO=backend/api-regression
+cd demo/engineering/scenarios/backend/ui-regression/worktree/fider/
+
+# Run linting
+golangci-lint run
+npx eslint .
+
+# Run tests
+go test ./...
+npm test
 ```
-
-This executes:
-- Linting (Go: `golangci-lint`, JS/TS: `eslint`)
-- Type checking (TypeScript: `tsc`)
-- Unit tests (Go: `go test`, JS: `jest`)
-- Build verification
-
-### With End-to-End Tests (Optional)
-
-E2E tests are opt-in due to longer runtime:
-
-```bash
-E2E=true make eng-ci SCENARIO=backend/api-regression
-```
-
-This adds:
-- Playwright end-to-end tests
-- Integration tests
-- Full application smoke tests
 
 ## Edge Proxy
 
-The Engineering track uses Traefik as an edge proxy for routing.
-
-### Start Edge Proxy
-
-```bash
-make eng-edge-up
-```
-
-This starts Traefik with:
-- HTTP routing on port 80
-- HTTPS with self-signed certificates on port 443
-- Dashboard on port 8080
-
-### Stop Edge Proxy
-
-```bash
-make eng-edge-down
-```
+The Traefik edge proxy is started automatically by `democtl run`. No manual start required.
 
 ## Application Runtime
 
 ### Start the Application
 
 ```bash
-make eng-up SCENARIO=backend/ui-regression
+democtl run backend/ui-regression
 ```
 
-This starts:
-- PostgreSQL database
-- Fider application (backend + frontend)
-- Any scenario-specific services
-
-The application will be available at:
-- **URL**: `http://<slug>.localhost:8082` (e.g., `http://ui-regression.localhost:8082`)
+Visit: **http://ui-regression.localhost:8082**
 
 ### Verify the Deployment
 
-Run scenario-specific checks to verify the deployment:
+Run scenario-specific checks:
 
 ```bash
-# Run all checks for the default stage
-make eng-verify SCENARIO=backend/ui-regression
+# Run all checks
+democtl checks verify backend/ui-regression
 
 # Run checks for a specific stage
-make eng-verify SCENARIO=backend/ui-regression STAGE=broken
-make eng-verify SCENARIO=backend/ui-regression STAGE=fixed
+democtl checks verify backend/ui-regression --stage broken
+democtl checks verify backend/ui-regression --stage fixed
 
-# Run only UI/Playwright checks
-make ui-verify TYPE=engineering SCENARIO=backend/ui-regression
+# Run only specific check types
+democtl checks verify backend/ui-regression --only playwright
 ```
 
 ### Monitor Application Logs
 
-Use the sniff command to tail logs:
+Use docker compose:
 
 ```bash
-make eng-sniff SCENARIO=backend/ui-regression
+cd demo/engineering/scenarios/backend/ui-regression
+docker compose logs -f
 ```
-
-This shows real-time logs from all services.
 
 ### Stop the Application
 
 ```bash
-make eng-down SCENARIO=backend/ui-regression
+democtl reset backend/ui-regression
 ```
 
 ## Working with Prepared PRs

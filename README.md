@@ -7,41 +7,59 @@ A dual-track demo repository showcasing debugging and development workflows with
 
 ## Quick Start
 
-New to the demo? Follow the **Golden Path** (3-4 commands):
+### For Demo Users (Presenters)
+
+Just want to run scenarios? Follow this path:
 
 ```bash
-# 1. One-time setup
-make setup
+# 1. Build democtl (one-time, or after git pull)
+make build-democtl
 
-# 2. Verify prerequisites
-make verify
+# 2. Add to PATH for convenience (optional)
+fish_add_path $PWD/bin  # fish
+# OR for bash/zsh:
+export PATH="$PWD/bin:$PATH"
 
-# 3. Run a scenario (auto-detects track and starts runtime)
-make run SCENARIO=platform/bad-rollout  # SRE (Kubernetes)
-# OR
-make run SCENARIO=backend/ui-regression  # Engineering (Docker Compose)
+# 3. Setup (installs UI testing dependencies)
+democtl setup
 
-# 4. Workshop flow (Engineering scenarios only)
-# Edit code in: demo/engineering/scenarios/backend/ui-regression/worktree/fider/
-make reset SCENARIO=backend/ui-regression  # Restart at broken state
-make fix-it SCENARIO=backend/ui-regression  # Jump to solved state (escape hatch)
+# 4. Verify prerequisites
+democtl verify
 
-# 5. Clean up
-make reset-all FORCE=true
+# 5. Run a scenario - it auto-detects track and starts runtime
+democtl run platform/bad-rollout     # SRE (Kubernetes)
+democtl run backend/ui-regression    # Engineering (Docker Compose)
+
+# 6. Check status
+democtl doctor
+
+# 7. Clean up when done
+democtl reset-all --force
 ```
 
-**SRE scenarios** run at `http://<slug>.localhost:8080`  
-**Engineering scenarios** run at `http://<slug>.localhost:8082`
+**URLs:**
+- SRE scenarios: `http://<slug>.localhost:8080`
+- Engineering scenarios: `http://<slug>.localhost:8082`
 
-ℹ️ **Both tracks can run simultaneously!** See [docs/GETTING_STARTED.md](docs/GETTING_STARTED.md) for details.
+**Both tracks can run simultaneously!**
+
+### For Maintainers (Scenario Developers)
+
+See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for:
+- Creating new scenarios
+- Maintaining git refs (Engineering track)
+- Writing checks and tests
+- Rebasing scenario branches
 
 ### Prerequisites
 
 | Track | Required | Optional |
 |-------|----------|----------|
-| **SRE** | Docker, kind, kubectl, jq, curl | helm |
-| **Engineering** | Docker, git, go (1.21+), node (18+), npm | golangci-lint |
-| **UI Testing** | Node.js (18+) | - |
+| **SRE** | Docker, kind, kubectl, jq, curl, helm | - |
+| **Engineering** | Docker, git | go (1.21+) for maintainers |
+| **UI Testing** | Node.js (18+), npm | - |
+
+**Note for demo users**: Go/Node are only needed for building `democtl` and UI tests. The scenarios themselves run in Docker.
 
 ## Available Scenarios
 
@@ -88,19 +106,11 @@ make reset-all FORCE=true
 
 ## Maintaining Scenarios
 
-Engineering scenarios use git branches and tags. When `main` is updated (infrastructure changes, new scenarios, etc.), scenario branches must be rebased:
-
-```bash
-# For each scenario (ui-regression, missing-fallback, feature-flag-rollout):
-git checkout scenario/<track>/<slug>
-git rebase main
-git tag -f -a scenario/<track>/<slug>/broken HEAD~1 -m "broken baseline"
-git tag -f -a scenario/<track>/<slug>/solved HEAD -m "solved baseline"
-git push origin scenario/<track>/<slug> --force-with-lease
-git push origin --tags --force
-```
-
-See [AGENTS.md](AGENTS.md) for more details on the git ref contract.
+**For maintainers only.** See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for details on:
+- Rebasing Engineering scenario branches when `main` changes
+- Managing git tags and refs
+- Scenario manifest format
+- The git ref contract
 
 ## Repository Structure
 

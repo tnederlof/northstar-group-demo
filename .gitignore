@@ -4,6 +4,10 @@ demo/.state/
 # Scenario worktrees (managed by git worktree)
 demo/engineering/scenarios/**/worktree/
 
+# Build artifacts
+bin/
+democtl/go.sum
+
 # Local development
 .env.local
 *.local.env

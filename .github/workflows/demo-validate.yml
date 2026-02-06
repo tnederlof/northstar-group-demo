@@ -4,12 +4,14 @@ on:
   pull_request:
     paths:
       - 'demo/**'
+      - 'democtl/**'
       - '.github/workflows/demo-validate.yml'
   push:
     branches:
       - main
     paths:
       - 'demo/**'
+      - 'democtl/**'
       - '.github/workflows/demo-validate.yml'
 
 jobs:
@@ -21,12 +23,34 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache-dependency-path: democtl/go.sum
+      
+      - name: Build democtl
+        run: |
+          cd democtl
+          go mod download
+          go build -o ../bin/democtl ./cmd/democtl
+          chmod +x ../bin/democtl
+      
+      - name: Verify democtl
+        run: ./bin/democtl --help
+      
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       
+      - name: Run democtl tests
+        run: |
+          cd democtl
+          go test ./...
+          go vet ./...
+      
       - name: Validate scenario manifests
         run: |
-          make -C demo validate-scenarios
+          ./bin/democtl validate-scenarios --strict
         continue-on-error: false
       
       - name: Validate Docker Compose files
@@ -50,20 +74,6 @@ jobs:
             exit 1
           fi
         continue-on-error: false
-      
-      - name: Install shellcheck
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y shellcheck
-      
-      - name: Run shellcheck on demo scripts
-        run: |
-          echo "Running shellcheck on demo scripts..."
-          find demo -name '*.sh' -type f | while read -r script; do
-            echo "Checking $script"
-            shellcheck "$script" || echo "Warning: shellcheck found issues in $script"
-          done
-        continue-on-error: true
       
       - name: Validate scenario JSON metadata
         run: |

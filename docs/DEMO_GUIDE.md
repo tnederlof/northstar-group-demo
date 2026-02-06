@@ -53,9 +53,9 @@ Is your audience primarily focused on:
 - Pod health checks
 - Monitoring and observability
 
-**Run Command**:
+**Run**:
 ```bash
-make run SCENARIO=platform/bad-rollout
+democtl run platform/bad-rollout
 ```
 
 ### Platform/Resource Exhaustion
@@ -71,9 +71,9 @@ make run SCENARIO=platform/bad-rollout
 - Pod restart patterns
 - Capacity planning
 
-**Run Command**:
+**Run**:
 ```bash
-make run SCENARIO=platform/resource-exhaustion
+democtl run platform/resource-exhaustion
 ```
 
 ### Platform/Network Isolation
@@ -89,9 +89,9 @@ make run SCENARIO=platform/resource-exhaustion
 - Debugging network connectivity
 - Security vs accessibility tradeoffs
 
-**Run Command**:
+**Run**:
 ```bash
-make run SCENARIO=platform/network-isolation
+democtl run platform/network-isolation
 ```
 
 ### Platform/Missing Metrics
@@ -107,9 +107,9 @@ make run SCENARIO=platform/network-isolation
 - Label selector troubleshooting
 - Observability best practices
 
-**Run Command**:
+**Run**:
 ```bash
-make run SCENARIO=platform/missing-metrics
+democtl run platform/missing-metrics
 ```
 
 ## Engineering Track Scenarios
@@ -127,9 +127,9 @@ make run SCENARIO=platform/missing-metrics
 - Unit testing best practices
 - Code review importance
 
-**Run Command**:
+**Run**:
 ```bash
-make run SCENARIO=backend/ui-regression
+democtl run backend/ui-regression
 ```
 
 ### Frontend/Missing Fallback
@@ -145,9 +145,9 @@ make run SCENARIO=backend/ui-regression
 - User experience during failures
 - Frontend testing with Playwright
 
-**Run Command**:
+**Run**:
 ```bash
-make run SCENARIO=frontend/missing-fallback
+democtl run frontend/missing-fallback
 ```
 
 ### Backend/Feature Flag Rollout
@@ -163,9 +163,9 @@ make run SCENARIO=frontend/missing-fallback
 - Progressive feature rollout
 - A/B testing foundations
 
-**Run Command**:
+**Run**:
 ```bash
-make run SCENARIO=backend/feature-flag-rollout
+democtl run backend/feature-flag-rollout
 ```
 
 ## Demo Flow Per Persona
@@ -203,9 +203,9 @@ kubectl rollout undo deployment/fider -n demo-bad-rollout
 
 **Key Commands**:
 ```bash
-make run SCENARIO=backend/ui-regression
-make reset SCENARIO=backend/ui-regression
-make fix-it SCENARIO=backend/ui-regression
+democtl run backend/ui-regression
+democtl reset backend/ui-regression
+democtl fix-it backend/ui-regression
 ```
 
 ### Frontend Engineer (Jennifer) - Engineering Track
@@ -221,9 +221,9 @@ make fix-it SCENARIO=backend/ui-regression
 
 **Key Commands**:
 ```bash
-make run SCENARIO=frontend/missing-fallback
-make reset SCENARIO=frontend/missing-fallback
-make fix-it SCENARIO=frontend/missing-fallback
+democtl run frontend/missing-fallback
+democtl reset frontend/missing-fallback
+democtl fix-it frontend/missing-fallback
 ```
 
 ## Troubleshooting Common Issues
@@ -234,7 +234,7 @@ make fix-it SCENARIO=frontend/missing-fallback
 ```bash
 # Delete and recreate
 kind delete cluster --name fider-demo
-make run SCENARIO=platform/healthy
+democtl run platform/healthy
 ```
 
 #### Gateway Not Responding
@@ -247,8 +247,8 @@ kubectl logs -n envoy-gateway-system deployment/envoy-gateway
 #### Scenario Won't Deploy
 ```bash
 # Reset scenario
-make reset SCENARIO=platform/bad-rollout
-make run SCENARIO=platform/bad-rollout
+democtl reset platform/bad-rollout
+democtl run platform/bad-rollout
 ```
 
 ### Engineering Track
@@ -260,8 +260,8 @@ docker compose ps
 docker compose logs
 
 # Restart
-make reset SCENARIO=backend/ui-regression
-make run SCENARIO=backend/ui-regression
+democtl reset backend/ui-regression
+democtl run backend/ui-regression
 ```
 
 #### Port Conflicts
@@ -276,7 +276,7 @@ lsof -ti:3000 | xargs kill -9  # Frontend
 # Clean and retry
 go clean -cache
 npm clean-install
-make run SCENARIO=backend/ui-regression
+democtl run backend/ui-regression
 ```
 
 ## Best Practices for Presenters

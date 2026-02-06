@@ -24,8 +24,7 @@ INFRASTRUCTURE_PATHS=(
     "demo/engineering/compose/"
     "demo/sre/base/"
     "demo/shared/"
-    "demo/engineering/scripts/"
-    "demo/sre/scripts/"
+    "democtl/"
     "Makefile"
     "docs/"
 )

@@ -139,7 +139,7 @@ What tools or setup is needed?
 
 ## Running the Scenario
 ```bash
-make run SCENARIO=your-scenario-name
+democtl run your-scenario-name
 ```
 
 ## Expected Outcome
@@ -156,30 +156,30 @@ All scenarios must be tested before submission:
 #### SRE Scenarios
 
 ```bash
-# Verify the scenario can be deployed
-make run SCENARIO=platform/your-scenario-name
+# Verify deployment
+democtl run platform/your-scenario-name
 
-# Verify health checks pass
-make health SCENARIO=platform/your-scenario-name
+# Verify health checks
+democtl checks health platform/your-scenario-name
 
-# Verify teardown works
-make reset SCENARIO=platform/your-scenario-name
+# Verify teardown
+democtl reset platform/your-scenario-name
 ```
 
 #### Engineering Scenarios
 
 ```bash
-# Verify the scenario runs and creates worktree from broken tag
-make run SCENARIO=<track>/<slug>
+# Verify runs and creates worktree from broken tag
+democtl run <track>/<slug>
 
-# Verify reset to broken works
-make reset SCENARIO=<track>/<slug>
+# Verify reset to broken
+democtl reset <track>/<slug>
 
 # Verify fix-it jumps to solved tag
-make fix-it SCENARIO=<track>/<slug>
+democtl fix-it <track>/<slug>
 
 # Verify teardown
-make reset SCENARIO=<track>/<slug>
+democtl reset <track>/<slug>
 ```
 
 ### 6. PR Checklist
@@ -193,8 +193,8 @@ Before submitting your pull request:
 - [ ] Added scenario to `docs/DEMO_GUIDE.md` scenario list
 - [ ] Updated appropriate persona in `docs/PERSONAS.md`
 - [ ] Tested the full demo flow at least once
-- [ ] Added any new make targets to root Makefile
-- [ ] Documented any new environment variables in `demo/docs/CONTRACT.md`
+- [ ] Validated scenario manifest with `democtl validate-scenarios`
+- [ ] Documented any new environment variables in `demo/shared/contract/README.md`
 
 ## Fixing Bugs
 
@@ -268,26 +268,28 @@ Documentation improvements are always welcome!
 - Include comments for non-obvious configurations
 - Validate with `kubectl --dry-run=client`
 
-## Makefile Conventions
+## democtl Extensions
 
-When adding make targets:
+If adding new commands to `democtl`:
 
-- Use `##` comments for help text
-- Group related targets
-- Use `.PHONY` for non-file targets
-- Provide sensible defaults
-- Include error handling
+- Use cobra for command structure
+- Add usage examples in command help
+- Follow existing error handling patterns
+- Update shell completion
+- Add integration tests where appropriate
 
 Example:
-```makefile
-.PHONY: sre-demo
-sre-demo: ## Run an SRE demo scenario
-\t@if [ -z "$(SCENARIO)" ]; then \
-\t\techo "Error: SCENARIO is required"; \
-\t\texit 1; \
-\tfi
-\t@echo "Running SRE scenario: $(SCENARIO)"
-\t# ... implementation
+```go
+cmd := &cobra.Command{
+    Use:   "my-command <arg>",
+    Short: "Brief description",
+    Long:  `Detailed description...`,
+    Args:  cobra.ExactArgs(1),
+    RunE: func(cmd *cobra.Command, args []string) error {
+        // Implementation
+        return nil
+    },
+}
 ```
 
 ## Testing New Scenarios

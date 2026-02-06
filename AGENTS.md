@@ -61,9 +61,8 @@ This is required after:
 **Infrastructure paths (main only)**:
 - `demo/engineering/compose/` - Edge proxy, shared services
 - `demo/sre/base/` - Base Kubernetes manifests
-- `demo/shared/` - Shared scripts and contracts
-- `demo/engineering/scripts/` - Demo automation scripts
-- `demo/sre/scripts/` - SRE automation scripts
+- `demo/shared/` - Shared contracts
+- `democtl/` - Demo CLI implementation
 - `Makefile` - Top-level automation
 - `docs/` - Documentation
 
@@ -86,22 +85,23 @@ The pre-commit hook blocks infrastructure changes in `scenario/*` and `ws/*` bra
 
 ## Common Tasks
 
-### Golden Path (Recommended)
+### Golden Path (Demo Users)
 
-- Setup: `make setup`
-- Verify: `make verify`
-- Run any scenario: `make run SCENARIO=<track>/<slug>`
-- Reset: `make reset SCENARIO=<track>/<slug>` (returns to broken baseline)
-- Fix-it: `make fix-it SCENARIO=<track>/<slug>` (jump to solved baseline, engineering only)
-- Clean up: `make reset-all FORCE=true`
-- Status: `make doctor`
+- Build CLI: `make build-democtl`
+- Setup: `democtl setup`
+- Verify: `democtl verify`
+- Run any scenario: `democtl run <track>/<slug>`
+- Reset: `democtl reset <track>/<slug>` (returns to broken baseline)
+- Fix-it: `democtl fix-it <track>/<slug>` (jump to solved baseline, engineering only)
+- Clean up: `democtl reset-all --force`
+- Status: `democtl doctor`
 
 ### Advanced Commands
 
-- List scenarios: `make list-scenarios`
-- Run SRE demo: `make sre-demo SCENARIO=platform/bad-rollout`
-- Run engineering demo: `make eng-up SCENARIO=...`
-- Validate conformance: `make validate-scenarios`
+- List scenarios: `democtl list-scenarios`
+- Describe scenario: `democtl describe-scenario <track>/<slug>`
+- Run checks: `democtl checks verify <track>/<slug>`
+- Validate manifests: `democtl validate-scenarios`
 
 ## Related Docs
 

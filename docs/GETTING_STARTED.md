@@ -29,82 +29,116 @@ brew install docker kind kubectl node go jq curl helm
 open -a Docker
 ```
 
-## The Golden Path (3-4 Commands)
+## The Golden Path (Demo Users)
 
-### 1. One-Time Setup
+### Step 0: Build democtl
 
-This installs UI testing dependencies (Playwright):
-
-```bash
-make setup
-```
-
-### 2. Verify Prerequisites
-
-Check that you have all required tools installed:
+Build the `democtl` binary once (and after each `git pull`):
 
 ```bash
-make verify
+make build-democtl
 ```
 
-If verification fails, install the missing tools and run `make verify` again.
+**Optional: Add to PATH** for convenience:
 
-### 3. Run a Scenario
+```bash
+# Fish
+fish_add_path $PWD/bin
 
-The `run` command automatically:
-- Detects the scenario type (SRE or Engineering)
-- Ensures the required runtime is up
-- Deploys/starts the scenario
+# Bash/Zsh
+export PATH="$PWD/bin:$PATH"
+```
+
+**Optional: Enable shell completion:**
+
+```bash
+# Bash
+echo 'source <(democtl completion bash)' >> ~/.bashrc && source ~/.bashrc
+
+# Zsh
+echo 'source <(democtl completion zsh)' >> ~/.zshrc && source ~/.zshrc
+
+# Fish
+echo 'democtl completion fish | source' >> ~/.config/fish/config.fish
+```
+
+### Step 1: One-Time Setup
+
+Install UI testing dependencies (Playwright):
+
+```bash
+democtl setup
+```
+
+**Note**: This is only needed if you want to run UI/Playwright checks. Scenarios will run without this.
+
+### Step 2: Verify Prerequisites
+
+Check that you have all required tools:
+
+```bash
+democtl verify
+```
+
+If verification fails, install the missing tools and re-run.
+
+**For demo users**: You only need Docker, kind, kubectl for SRE or Docker for Engineering. Go/Node are optional unless you're developing.
+
+### Step 3: Run a Scenario
+
+`democtl run` automatically:
+- Detects scenario type (SRE or Engineering)
+- Ensures runtime is up
+- Deploys the scenario
 - Runs verification checks
 
-**SRE Example** - Bad Rollout (Kubernetes):
+**SRE Example** - Kubernetes:
 
 ```bash
-make run SCENARIO=platform/bad-rollout
+democtl run platform/bad-rollout
 ```
 
 Visit: **http://bad-rollout.localhost:8080**
 
-**Engineering Example** - UI Regression (Docker Compose):
+**Engineering Example** - Docker Compose:
 
 ```bash
-make run SCENARIO=backend/ui-regression
+democtl run backend/ui-regression
 ```
 
 Visit: **http://ui-regression.localhost:8082**
 
 **Engineering Workshop Flow:**
 
-For engineering scenarios, `make run` creates a git worktree you can edit:
+Engineering scenarios create a git worktree you can edit:
 
 ```bash
-# 1. Run creates worktree at demo/engineering/scenarios/backend/ui-regression/worktree/
-make run SCENARIO=backend/ui-regression
+# 1. Run creates worktree at:
+#    demo/engineering/scenarios/backend/ui-regression/worktree/
+democtl run backend/ui-regression
 
-# 2. Edit code in the worktree, commit changes
+# 2. Edit code in the worktree
 cd demo/engineering/scenarios/backend/ui-regression/worktree/fider/
-# make your fixes...
+# Make your fixes, commit changes
 git add . && git commit -m "fix: add null check"
 
-# 3. Reset to broken baseline to start over
-make reset SCENARIO=backend/ui-regression
+# 3. Reset to broken baseline
+democtl reset backend/ui-regression
 
-# 4. Or jump to solved state (escape hatch)
-make fix-it SCENARIO=backend/ui-regression
+# 4. Or jump to solved state
+democtl fix-it backend/ui-regression
 ```
 
-ℹ️ **Workshop commits**: Your commits stay on a local `ws/backend/ui-regression` branch. Use `FORCE=true` to override dirty worktree warnings.
+### Step 4: Clean Up
 
-### 4. Clean Up
-
-When you're done:
+When done:
 
 ```bash
 # Reset a specific scenario
-make reset SCENARIO=platform/bad-rollout
+democtl reset platform/bad-rollout
 
-# Or clean up everything
-make reset-all FORCE=true
+# Clean up everything
+democtl reset-all --force
 ```
 
 ## Understanding the Demo Tracks
@@ -137,10 +171,10 @@ Thanks to per-track port configuration, you can run SRE and Engineering scenario
 
 ```bash
 # Start an SRE scenario
-make run SCENARIO=platform/healthy
+democtl run platform/healthy
 
 # In another terminal, start an Engineering scenario
-make run SCENARIO=backend/ui-regression
+democtl run backend/ui-regression
 
 # Both are accessible:
 # - http://healthy.localhost:8080 (SRE)
@@ -162,25 +196,25 @@ These ports are hardcoded throughout the codebase for consistency.
 ### List Available Scenarios
 
 ```bash
-make list-scenarios
+democtl list-scenarios
 ```
 
 ### Check Scenario Health
 
 ```bash
-make health SCENARIO=platform/healthy
+democtl checks health platform/healthy
 ```
 
 ### View Runtime Status
 
 ```bash
-make doctor
+democtl doctor
 ```
 
-### Reset Without Verification
+### Run Without Verification
 
 ```bash
-make run SCENARIO=platform/healthy VERIFY=false
+democtl run platform/healthy --verify=false
 ```
 
 ## Troubleshooting
@@ -215,7 +249,7 @@ If the kind cluster is in a bad state:
 ```bash
 # Delete and recreate
 kind delete cluster --name fider-demo
-make run SCENARIO=platform/healthy
+democtl run platform/healthy
 ```
 
 ### Clean Slate
@@ -223,7 +257,7 @@ make run SCENARIO=platform/healthy
 To completely reset everything:
 
 ```bash
-make reset-all FORCE=true NUKE_UI=true
+democtl reset-all --force NUKE_UI=true
 ```
 
 This removes:
@@ -247,39 +281,39 @@ Here's a complete example session from start to finish:
 ```bash
 # 1. Setup
 cd northstar-group-demo
-make setup
-make verify
+democtl setup
+democtl verify
 
 # 2. Run an SRE scenario
-make run SCENARIO=platform/bad-rollout
+democtl run platform/bad-rollout
 
 # 3. Visit the URL
 open http://bad-rollout.localhost:8080
 
 # 4. Check health
-make health SCENARIO=platform/bad-rollout
+democtl checks health platform/bad-rollout
 
 # 5. Try an Engineering scenario (runs simultaneously!)
-make run SCENARIO=backend/ui-regression
+democtl run backend/ui-regression
 open http://ui-regression.localhost:8082
 
 # 6. Clean up
-make reset-all FORCE=true
+democtl reset-all --force
 ```
 
 ## Quick Reference
 
 | Command | Purpose |
 |---------|---------|
-| `make setup` | Install UI testing dependencies |
-| `make verify` | Check all prerequisites |
-| `make run SCENARIO=<track>/<slug>` | Run a scenario (auto-detects track) |
-| `make reset SCENARIO=<track>/<slug>` | Reset a scenario |
-| `make reset-all FORCE=true` | Clean up everything |
-| `make doctor` | Show runtime status |
-| `make list-scenarios` | List all scenarios |
-| `make health SCENARIO=<track>/<slug>` | Check scenario health |
-| `make help` | Show all commands |
+| `democtl setup` | Install UI testing dependencies |
+| `democtl verify` | Check all prerequisites |
+| `democtl run <track>/<slug>` | Run a scenario (auto-detects track) |
+| `democtl reset <track>/<slug>` | Reset a scenario |
+| `democtl reset-all --force` | Clean up everything |
+| `democtl doctor` | Show runtime status |
+| `democtl list-scenarios` | List all scenarios |
+| `democtl checks health <track>/<slug>` | Check scenario health |
+| `democtl --help` | Show all commands |
 
 ## Getting Help
 
