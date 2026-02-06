@@ -143,6 +143,12 @@ func DeployScenario(opts RuntimeOpts, s *scenario.Scenario) error {
 		return fmt.Errorf("failed to ensure worktree: %w", err)
 	}
 	
+	// Force-reset worktree to broken stage for deterministic start
+	fmt.Println("\033[0;34m==>\033[0m Ensuring worktree is in broken state...")
+	if err := ResetWorktreeToStage(opts.RepoRoot, s, "broken"); err != nil {
+		return fmt.Errorf("failed to reset worktree to broken: %w", err)
+	}
+	
 	// Read secrets from env file for compose interpolation
 	envVars, err := env.ReadEnvFile(envPath)
 	if err != nil {
@@ -245,17 +251,22 @@ func ResetScenario(opts RuntimeOpts, s *scenario.Scenario) error {
 	return WorktreeResetToBroken(opts.RepoRoot, s, false)
 }
 
-// FixItScenario resets an Engineering scenario to the solved state
-func FixItScenario(opts RuntimeOpts, s *scenario.Scenario) error {
+// SolveScenario resets an Engineering scenario to the solved state
+func SolveScenario(opts RuntimeOpts, s *scenario.Scenario) error {
 	// Stop the scenario
 	if err := StopScenario(opts, s); err != nil {
 		return err
 	}
 	
-	// Reset worktree to solved baseline using Go implementation
+	// Reset worktree to solved baseline
 	fmt.Println("\033[0;34m==>\033[0m Resetting worktree to solved baseline...")
 	
 	return WorktreeResetToSolved(opts.RepoRoot, s, true)
+}
+
+// FixItScenario is a deprecated alias for SolveScenario
+func FixItScenario(opts RuntimeOpts, s *scenario.Scenario) error {
+	return SolveScenario(opts, s)
 }
 
 // StopAllContainers stops all Engineering containers (for reset-all)

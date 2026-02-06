@@ -1,52 +1,60 @@
 {
-  "track": "backend",
-  "slug": "feature-flag-rollout",
-  "title": "Feature Flag Rollout - Inverted Logic",
-  "type": "engineering",
-  "url_host": "feature-flag-rollout.localhost",
-  "seed": true,
-  "reset_strategy": "worktree-reset",
-  "git": {
-    "maintenance_branch": "scenario/backend/feature-flag-rollout",
-    "broken_ref": "scenario/backend/feature-flag-rollout/broken",
-    "solved_ref": "scenario/backend/feature-flag-rollout/solved",
-    "work_branch": "ws/backend/feature-flag-rollout"
-  },
-  "description": "A feature flag has inverted logic causing incorrect behavior when enabled.",
-  "symptoms": [
-    "Feature behaves opposite to expectation",
-    "Tags not assigned when flag is enabled",
-    "Tests fail with flag enabled"
-  ],
-  "fix_hints": [
-    "Check feature flag conditional logic",
-    "Verify flag is not inverted",
-    "Add test coverage for flagged behavior"
-  ],
   "checks": {
-    "version": 1,
     "default_stage": "broken",
     "stages": {
       "broken": {
         "verify": [
           {
-            "type": "http.get",
             "description": "Health endpoint works (basic infra ok)",
-            "url": "http://feature-flag-rollout.localhost:8082/_health",
-            "expect": { "status": [200] }
+            "expect": {
+              "status": [
+                200
+              ]
+            },
+            "type": "http.get",
+            "url": "http://feature-flag-rollout.localhost:8082/_health"
           }
         ]
       },
-      "fixed": {
+      "solved": {
         "verify": [
           {
-            "type": "http.get",
             "description": "Health endpoint works after fix",
-            "url": "http://feature-flag-rollout.localhost:8082/_health",
-            "expect": { "status": [200] }
+            "expect": {
+              "status": [
+                200
+              ]
+            },
+            "type": "http.get",
+            "url": "http://feature-flag-rollout.localhost:8082/_health"
           }
         ]
       }
-    }
-  }
+    },
+    "version": 1
+  },
+  "description": "A feature flag has inverted logic causing incorrect behavior when enabled.",
+  "fix_hints": [
+    "Check feature flag conditional logic",
+    "Verify flag is not inverted",
+    "Add test coverage for flagged behavior"
+  ],
+  "git": {
+    "base_ref": "7732875e8074bb51adec04f5afa9026878664651",
+    "broken_patches_dir": "patches/broken",
+    "solved_patches_dir": "patches/solved",
+    "work_branch": "ws/backend/feature-flag-rollout"
+  },
+  "reset_strategy": "worktree-reset",
+  "seed": true,
+  "slug": "feature-flag-rollout",
+  "symptoms": [
+    "Feature behaves opposite to expectation",
+    "Tags not assigned when flag is enabled",
+    "Tests fail with flag enabled"
+  ],
+  "title": "Feature Flag Rollout - Inverted Logic",
+  "track": "backend",
+  "type": "engineering",
+  "url_host": "feature-flag-rollout.localhost"
 }

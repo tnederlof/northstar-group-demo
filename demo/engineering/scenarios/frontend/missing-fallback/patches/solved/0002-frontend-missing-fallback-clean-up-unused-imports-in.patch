@@ -1,0 +1,44 @@
+From f9793ee709cfcbbc78c7a6b270e38848670035a3 Mon Sep 17 00:00:00 2001
+From: Trevor Nederlof <trevor.nederlof@hey.com>
+Date: Wed, 4 Feb 2026 19:06:21 -0500
+Subject: [PATCH 2/3] frontend/missing-fallback: clean up unused imports in
+ broken state
+
+Remove ErrorBoundary import and logProductionError function that were
+causing TypeScript build errors. The broken state should build successfully
+but show white screens at runtime when component errors occur (because
+no error boundary is wrapping the app).
+---
+ fider/public/index.tsx | 9 +--------
+ 1 file changed, 1 insertion(+), 8 deletions(-)
+
+diff --git a/fider/public/index.tsx b/fider/public/index.tsx
+index 95192f0..98f3ff5 100644
+--- a/fider/public/index.tsx
++++ b/fider/public/index.tsx
+@@ -2,7 +2,7 @@ import "@fider/assets/styles/index.scss"
+ 
+ import React, { Suspense } from "react"
+ import { createRoot } from "react-dom/client"
+-import { ErrorBoundary, Loader, ReadOnlyNotice, DevBanner } from "@fider/components"
++import { Loader, ReadOnlyNotice, DevBanner } from "@fider/components"
+ import { classSet, Fider, FiderContext, actions, activateI18N } from "@fider/services"
+ 
+ import { I18n } from "@lingui/core"
+@@ -15,13 +15,6 @@ const Loading = () => (
+   </div>
+ )
+ 
+-const logProductionError = (err: Error) => {
+-  if (Fider.isProduction()) {
+-    console.error(err)
+-    actions.logError(`react.ErrorBoundary: ${err.message}`, err)
+-  }
+-}
+-
+ window.addEventListener("unhandledrejection", (evt: PromiseRejectionEvent) => {
+   if (evt.reason instanceof Error) {
+     actions.logError(`window.unhandledrejection: ${evt.reason.message}`, evt.reason)
+-- 
+2.50.1 (Apple Git-155)
+

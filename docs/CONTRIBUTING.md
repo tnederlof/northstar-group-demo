@@ -11,35 +11,45 @@ Decide whether your scenario fits the **SRE track** or **Engineering track**:
 - **SRE Track**: Infrastructure, Kubernetes, deployments, scaling
 - **Engineering Track**: Application code, bugs, testing, CI/CD
 
-### 2. Create Scenario Branch and Tags
+### 2. Create Scenario Structure
 
 For **SRE scenarios**:
 ```bash
 git checkout -b demo/sre/your-scenario-name main
 ```
 
-For **Engineering scenarios**, use the scenario maintenance branch model:
+For **Engineering scenarios**, use the patch-based workflow:
 ```bash
-# Create maintenance branch from main
-git checkout -b scenario/<track>/<slug> main
+# Pick a base commit (usually current HEAD of main)
+git checkout main
+BASE_REF=$(git rev-parse HEAD)
 
-# Make changes for broken state
-# ... edit code to introduce the bug ...
+# Create a throwaway branch to develop broken state
+git checkout -b temp-broken-<slug>
+
+# Make changes to fider/ to introduce the bug
+vim fider/app/handlers/your_handler.go
 git commit -m "<track>/<slug>: introduce bug"
 
-# Tag the broken baseline
-git tag -a scenario/<track>/<slug>/broken -m "<track>/<slug>: broken baseline"
+# Export broken patches
+mkdir -p demo/engineering/scenarios/<track>/<slug>/patches/broken
+git format-patch --binary --output-directory demo/engineering/scenarios/<track>/<slug>/patches/broken $BASE_REF..HEAD
 
-# Make changes for solved state
-# ... edit code to fix the bug ...
+# Continue to solved state
+vim fider/app/handlers/your_handler.go
 git commit -m "<track>/<slug>: fix bug"
 
-# Tag the solved baseline
-git tag -a scenario/<track>/<slug>/solved -m "<track>/<slug>: solved baseline"
+# Export solved patches
+mkdir -p demo/engineering/scenarios/<track>/<slug>/patches/solved
+git format-patch --binary --output-directory demo/engineering/scenarios/<track>/<slug>/patches/solved $BASE_REF..HEAD
 
-# Push branch and tags
-git push origin scenario/<track>/<slug>
-git push origin --tags
+# Return to main and commit the patches
+git checkout main
+git add demo/engineering/scenarios/<track>/<slug>/patches
+git commit -m "Add patches for <track>/<slug>"
+
+# Clean up temp branch
+git branch -D temp-broken-<slug>
 ```
 
 ### 3. Implement the Scenario
@@ -79,9 +89,9 @@ cat > demo/engineering/scenarios/<track>/<slug>/scenario.json <<EOF
   "seed": true,
   "reset_strategy": "worktree-reset",
   "git": {
-    "maintenance_branch": "scenario/<track>/<slug>",
-    "broken_ref": "scenario/<track>/<slug>/broken",
-    "solved_ref": "scenario/<track>/<slug>/solved",
+    "base_ref": "<40-character-commit-sha>",
+    "broken_patches_dir": "patches/broken",
+    "solved_patches_dir": "patches/solved",
     "work_branch": "ws/<track>/<slug>"
   },
   "description": "Brief description",
@@ -94,7 +104,7 @@ cat > demo/engineering/scenarios/<track>/<slug>/scenario.json <<EOF
       "broken": {
         "verify": [{"type": "http.get", "url": "http://<slug>.localhost:8082/_health", "expect": {"status": [500]}}]
       },
-      "fixed": {
+      "solved": {
         "verify": [{"type": "http.get", "url": "http://<slug>.localhost:8082/_health", "expect": {"status": [200]}}]
       }
     }
@@ -108,10 +118,10 @@ vim fider/app/handlers/your_handler_test.go
 ```
 
 **Important conformance rules**:
-- Automation must rely on tags (`scenario/<track>/<slug>/broken` and `/solved`), not mutable branches
-- Worktrees are created from the broken tag onto a local `ws/<track>/<slug>` branch
-- The maintenance branch is where you rebase/update when `main` evolves
-- Tags represent stable waypoints that `make run/reset/fix-it` depend on
+- All patches MUST only modify files under `fider/`
+- Worktrees are created from `base_ref` + patches onto a local `ws/<track>/<slug>` branch
+- Patches are stored as files in the repo (not as git refs)
+- Use `git format-patch --binary` to ensure binary files are handled correctly
 
 ### 4. Document the Scenario
 
@@ -169,14 +179,14 @@ democtl reset platform/your-scenario-name
 #### Engineering Scenarios
 
 ```bash
-# Verify runs and creates worktree from broken tag
+# Verify runs and creates worktree from base + broken patches
 democtl run <track>/<slug>
 
 # Verify reset to broken
 democtl reset <track>/<slug>
 
-# Verify fix-it jumps to solved tag
-democtl fix-it <track>/<slug>
+# Verify solve jumps to solved state (base + solved patches)
+democtl solve <track>/<slug>
 
 # Verify teardown
 democtl reset <track>/<slug>

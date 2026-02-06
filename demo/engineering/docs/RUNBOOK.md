@@ -38,7 +38,7 @@ democtl run backend/ui-regression
 
 This creates:
 - A Git worktree in `demo/engineering/scenarios/backend/ui-regression/worktree/`
-- Checks out from the `scenario/backend/ui-regression/broken` tag
+- Checks out from pinned `base_ref` and applies broken patches
 - Creates a local workshop branch `ws/backend/ui-regression`
 - Starts the Docker Compose runtime
 
@@ -60,7 +60,7 @@ cd demo/engineering/scenarios/backend/ui-regression/worktree/fider/
 democtl reset backend/ui-regression
 
 # Jump to solved baseline (escape hatch)
-democtl fix-it backend/ui-regression
+democtl solve backend/ui-regression
 ```
 
 ## CI Checks
@@ -103,7 +103,7 @@ democtl checks verify backend/ui-regression
 
 # Run checks for a specific stage
 democtl checks verify backend/ui-regression --stage broken
-democtl checks verify backend/ui-regression --stage fixed
+democtl checks verify backend/ui-regression --stage solved
 
 # Run only specific check types
 democtl checks verify backend/ui-regression --only playwright
@@ -123,26 +123,6 @@ docker compose logs -f
 ```bash
 democtl reset backend/ui-regression
 ```
-
-## Working with Prepared PRs
-
-Scenarios include prepared pull requests with passing CI checks.
-
-### Viewing PR Status
-
-Each scenario branch has:
-- **Green checks**: All CI checks passing
-- **Clear description**: Problem and expected solution
-- **Test coverage**: Automated tests to verify fix
-
-### Demo Flow with PRs
-
-1. **Show the broken state** on the scenario branch
-2. **Navigate to the PR** (link in scenario README)
-3. **Review the changes** in the PR diff
-4. **Highlight CI status** (all green ✓)
-5. **Merge the PR** or cherry-pick the fix
-6. **Verify the fix** with `make eng-ci`
 
 ## Making and Committing Fixes
 

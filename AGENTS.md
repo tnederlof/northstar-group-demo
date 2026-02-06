@@ -19,38 +19,39 @@ Dual-track demo repository showcasing Warp workflows. Two runtimes (SRE: Kuberne
 - Scenarios are manifest-driven: `scenario.json` required
 - Both tracks can run simultaneously
 
-### Engineering Scenario Git Ref Contract
+### Engineering Scenario Patch Contract
 
-- **Maintenance branch**: `scenario/<track>/<slug>` (mutable, for rebasing)
-- **Broken baseline tag**: `scenario/<track>/<slug>/broken` (stable, immutable)
-- **Solved baseline tag**: `scenario/<track>/<slug>/solved` (stable, immutable)
+- **Base commit**: Pinned `base_ref` (full 40-char SHA) in `scenario.json`
+- **Broken patches**: `patches/broken/*.patch` (git format-patch output)
+- **Solved patches**: `patches/solved/*.patch` (git format-patch output)
 - **Workshop branch**: `ws/<track>/<slug>` (local only, per-participant)
 - **Worktree location**: `demo/engineering/scenarios/<track>/<slug>/worktree/`
-- **Automation relies on tags**, not branches - tags are the single source of truth
+- **Patch scope**: All patches MUST only modify files under `fider/`
 - Workshop commits stay on local `ws/` branches and don't affect baselines
 
-### Keeping Scenarios Current
+### Updating Scenarios to New Base
 
-**IMPORTANT**: When `main` changes, scenario branches must be rebased to stay current:
+When the `fider/` codebase changes significantly, scenarios may need rebasing:
 
 ```bash
-# For each scenario:
-git checkout scenario/<track>/<slug>
-git rebase main
+# Use the rebase-scenario-patches command (if available)
+democtl rebase-scenario-patches --to <new_base_ref> --all
 
-# Update tags to point to rebased commits (broken=HEAD~1, solved=HEAD)
-git tag -f -a scenario/<track>/<slug>/broken HEAD~1 -m "<track>/<slug>: broken baseline"
-git tag -f -a scenario/<track>/<slug>/solved HEAD -m "<track>/<slug>: solved baseline"
+# Or manually re-record patches:
+# 1. Create throwaway branch at new base
+git checkout -b temp-rebase <new_base_ref>
 
-# Force push (tags are automation API, this is expected)
-git push origin scenario/<track>/<slug> --force-with-lease
-git push origin --tags --force
+# 2. Recreate broken state, export patches
+git format-patch --binary --output-directory patches/broken <new_base_ref>..HEAD
+
+# 3. Repeat for solved state
+# 4. Update scenario.json with new base_ref
 ```
 
-This is required after:
-- Infrastructure changes to `main`
-- Removing/adding scenarios
-- Updates to shared code or configurations
+After updating scenarios:
+- Run `democtl validate-scenarios --strict`
+- Run `democtl validate-patches --strict`
+- Test each scenario with `democtl run` and `democtl solve`
 
 ## Git Workflow
 
@@ -92,7 +93,7 @@ The pre-commit hook blocks infrastructure changes in `scenario/*` and `ws/*` bra
 - Verify: `democtl verify`
 - Run any scenario: `democtl run <track>/<slug>`
 - Reset: `democtl reset <track>/<slug>` (returns to broken baseline)
-- Fix-it: `democtl fix-it <track>/<slug>` (jump to solved baseline, engineering only)
+- Solve: `democtl solve <track>/<slug>` (jump to solved baseline, engineering only)
 - Clean up: `democtl reset-all --force`
 - Status: `democtl doctor`
 

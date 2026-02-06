@@ -1,0 +1,30 @@
+From 090742d7b25375693a04036ad7219992531b7c26 Mon Sep 17 00:00:00 2001
+From: Trevor Nederlof <trevor.nederlof@hey.com>
+Date: Wed, 4 Feb 2026 17:42:44 -0500
+Subject: [PATCH 2/2] backend/ui-regression: add nil check to prevent panic
+
+Add defensive nil check before accessing post result in ListVotes handler.
+This prevents nil pointer dereference when requesting votes for a
+non-existent post number.
+---
+ fider/app/handlers/apiv1/post.go | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/fider/app/handlers/apiv1/post.go b/fider/app/handlers/apiv1/post.go
+index 7d09a5e..3002925 100644
+--- a/fider/app/handlers/apiv1/post.go
++++ b/fider/app/handlers/apiv1/post.go
+@@ -506,6 +506,10 @@ func ListVotes() web.HandlerFunc {
+ 		return c.Failure(err)
+ 	}
+ 
++	if getPost.Result == nil {
++		return c.NotFound()
++	}
++
+ 	includeEmail := c.User() != nil && c.User().IsCollaborator()
+ 	listVotes := &query.ListPostVotes{PostID: getPost.Result.ID, IncludeEmail: includeEmail}
+ 		if err := bus.Dispatch(c, listVotes); err != nil {
+-- 
+2.50.1 (Apple Git-155)
+

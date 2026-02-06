@@ -1,0 +1,51 @@
+From 86910a924094a326677e89e7c9d615fb58240773 Mon Sep 17 00:00:00 2001
+From: Trevor Nederlof <trevor.nederlof@hey.com>
+Date: Wed, 4 Feb 2026 17:46:30 -0500
+Subject: [PATCH] backend/feature-flag-rollout: invert feature flag logic
+
+Change PostCreationWithTagsEnabled check from positive to negative,
+causing tags to only be assigned when the flag is DISABLED.
+This simulates a common mistake when implementing feature flags.
+---
+ fider/app/handlers/apiv1/post.go | 22 +++++++++++-----------
+ 1 file changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/fider/app/handlers/apiv1/post.go b/fider/app/handlers/apiv1/post.go
+index 058be7f..7cbd23c 100644
+--- a/fider/app/handlers/apiv1/post.go
++++ b/fider/app/handlers/apiv1/post.go
+@@ -80,20 +80,20 @@ func CreatePost() web.HandlerFunc {
+ 			return c.Failure(err)
+ 		}
+ 
+-		setAttachments := &cmd.SetAttachments{Post: newPost.Result, Attachments: action.Attachments}
+-		addVote := &cmd.AddVote{Post: newPost.Result, User: c.User()}
+-		if err = bus.Dispatch(c, setAttachments, addVote); err != nil {
+-			return c.Failure(err)
+-		}
++	setAttachments := &cmd.SetAttachments{Post: newPost.Result, Attachments: action.Attachments}
++	addVote := &cmd.AddVote{Post: newPost.Result, User: c.User()}
++	if err = bus.Dispatch(c, setAttachments, addVote); err != nil {
++		return c.Failure(err)
++	}
+ 
+-		if env.Config.PostCreationWithTagsEnabled {
+-			for _, tag := range action.Tags {
+-				assignTag := &cmd.AssignTag{Tag: tag, Post: newPost.Result}
+-				if err := bus.Dispatch(c, assignTag); err != nil {
+-					return c.Failure(err)
+-				}
++	if !env.Config.PostCreationWithTagsEnabled {
++		for _, tag := range action.Tags {
++			assignTag := &cmd.AssignTag{Tag: tag, Post: newPost.Result}
++			if err := bus.Dispatch(c, assignTag); err != nil {
++				return c.Failure(err)
+ 			}
+ 		}
++	}
+ 
+ 		c.Enqueue(tasks.NotifyAboutNewPost(newPost.Result))
+ 
+-- 
+2.50.1 (Apple Git-155)
+

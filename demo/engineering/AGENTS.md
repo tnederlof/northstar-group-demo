@@ -11,16 +11,16 @@ Code-first demos. Git worktrees + CI + Compose.
 - **Dual networks**: `northstar-demo` (shared) + scenario-specific (private)
 - **URL pattern**: `http://<slug>.localhost:8082`
 
-## Worktree Lifecycle (Git Ref Model)
+## Worktree Lifecycle (Patch-Based Model)
 
-- `make run SCENARIO=<path>` - create worktree from broken tag on `ws/<path>` branch
-- `make reset SCENARIO=<path>` - reset worktree to broken baseline tag
-- `make fix-it SCENARIO=<path>` - reset worktree to solved baseline tag (escape hatch)
-- `make eng-reset-broken SCENARIO=<path>` - reset worktree only (no restart)
+- `democtl run <track>/<slug>` - create worktree from base_ref + apply broken patches
+- `democtl reset <track>/<slug>` - reset worktree to broken baseline (base + broken patches)
+- `democtl solve <track>/<slug>` - reset worktree to solved baseline (base + solved patches)
 - Worktrees created at: `demo/engineering/scenarios/<track>/<slug>/worktree/`
 - Workshop commits: stay on local `ws/<track>/<slug>` branch
-- Tags are immutable: automation uses `scenario/<track>/<slug>/broken` and `/solved`
-- Use `FORCE=true` to override dirty worktree warnings
+- Patches stored in: `patches/broken/` and `patches/solved/` within each scenario
+- All patches MUST only modify files under `fider/`
+- Reset operations are intentionally destructive (discard uncommitted changes)
 
 ## Common Tasks
 

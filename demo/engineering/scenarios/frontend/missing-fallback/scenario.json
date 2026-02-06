@@ -1,62 +1,70 @@
 {
-  "track": "frontend",
-  "slug": "missing-fallback",
-  "title": "Missing Fallback - Error Boundary Removed",
-  "type": "engineering",
-  "url_host": "missing-fallback.localhost",
-  "seed": true,
-  "reset_strategy": "worktree-reset",
-  "git": {
-    "maintenance_branch": "scenario/frontend/missing-fallback",
-    "broken_ref": "scenario/frontend/missing-fallback/broken",
-    "solved_ref": "scenario/frontend/missing-fallback/solved",
-    "work_branch": "ws/frontend/missing-fallback"
-  },
-  "description": "A removed error boundary causes the UI to white-screen on component errors.",
-  "symptoms": [
-    "UI shows blank white screen",
-    "Browser console shows uncaught error",
-    "No user-friendly error message displayed"
-  ],
-  "fix_hints": [
-    "Add error boundary wrapper to catch component errors",
-    "Ensure graceful degradation of UI",
-    "Provide user-friendly error message"
-  ],
   "checks": {
-    "version": 1,
     "default_stage": "broken",
     "stages": {
       "broken": {
         "verify": [
           {
-            "type": "http.get",
             "description": "Health endpoint works (backend ok)",
-            "url": "http://missing-fallback.localhost:8082/_health",
-            "expect": { "status": [200] }
+            "expect": {
+              "status": [
+                200
+              ]
+            },
+            "type": "http.get",
+            "url": "http://missing-fallback.localhost:8082/_health"
           },
           {
-            "type": "playwright.run",
             "description": "UI white-screens without error boundary",
-            "suite": "eng/missing-fallback-broken"
+            "suite": "eng/missing-fallback-broken",
+            "type": "playwright.run"
           }
         ]
       },
-      "fixed": {
+      "solved": {
         "verify": [
           {
-            "type": "http.get",
             "description": "Health endpoint works",
-            "url": "http://missing-fallback.localhost:8082/_health",
-            "expect": { "status": [200] }
+            "expect": {
+              "status": [
+                200
+              ]
+            },
+            "type": "http.get",
+            "url": "http://missing-fallback.localhost:8082/_health"
           },
           {
-            "type": "playwright.run",
             "description": "UI shows error boundary after fix",
-            "suite": "eng/missing-fallback-fixed"
+            "suite": "eng/missing-fallback-fixed",
+            "type": "playwright.run"
           }
         ]
       }
-    }
-  }
+    },
+    "version": 1
+  },
+  "description": "A removed error boundary causes the UI to white-screen on component errors.",
+  "fix_hints": [
+    "Add error boundary wrapper to catch component errors",
+    "Ensure graceful degradation of UI",
+    "Provide user-friendly error message"
+  ],
+  "git": {
+    "base_ref": "c793b2e71094f806ae83c1762debcb4cc420b42b",
+    "broken_patches_dir": "patches/broken",
+    "solved_patches_dir": "patches/solved",
+    "work_branch": "ws/frontend/missing-fallback"
+  },
+  "reset_strategy": "worktree-reset",
+  "seed": true,
+  "slug": "missing-fallback",
+  "symptoms": [
+    "UI shows blank white screen",
+    "Browser console shows uncaught error",
+    "No user-friendly error message displayed"
+  ],
+  "title": "Missing Fallback - Error Boundary Removed",
+  "track": "frontend",
+  "type": "engineering",
+  "url_host": "missing-fallback.localhost"
 }

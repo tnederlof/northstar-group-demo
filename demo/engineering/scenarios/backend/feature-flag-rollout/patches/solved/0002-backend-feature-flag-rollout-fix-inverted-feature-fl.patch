@@ -1,0 +1,27 @@
+From d865a28555c4681f7645413a2c44e9d426a0df2a Mon Sep 17 00:00:00 2001
+From: Trevor Nederlof <trevor.nederlof@hey.com>
+Date: Wed, 4 Feb 2026 17:46:50 -0500
+Subject: [PATCH 2/2] backend/feature-flag-rollout: fix inverted feature flag
+
+Correct the feature flag logic to properly check for enabled state.
+Tags will now be assigned when PostCreationWithTagsEnabled is true.
+---
+ fider/app/handlers/apiv1/post.go | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fider/app/handlers/apiv1/post.go b/fider/app/handlers/apiv1/post.go
+index 7cbd23c..30acc9f 100644
+--- a/fider/app/handlers/apiv1/post.go
++++ b/fider/app/handlers/apiv1/post.go
+@@ -86,7 +86,7 @@ func CreatePost() web.HandlerFunc {
+ 		return c.Failure(err)
+ 	}
+ 
+-	if !env.Config.PostCreationWithTagsEnabled {
++	if env.Config.PostCreationWithTagsEnabled {
+ 		for _, tag := range action.Tags {
+ 			assignTag := &cmd.AssignTag{Tag: tag, Post: newPost.Result}
+ 			if err := bus.Dispatch(c, assignTag); err != nil {
+-- 
+2.50.1 (Apple Git-155)
+

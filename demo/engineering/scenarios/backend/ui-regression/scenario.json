@@ -1,62 +1,70 @@
 {
-  "track": "backend",
-  "slug": "ui-regression",
-  "title": "UI Regression - Missing Null Check",
-  "type": "engineering",
-  "url_host": "ui-regression.localhost",
-  "seed": true,
-  "reset_strategy": "worktree-reset",
-  "git": {
-    "maintenance_branch": "scenario/backend/ui-regression",
-    "broken_ref": "scenario/backend/ui-regression/broken",
-    "solved_ref": "scenario/backend/ui-regression/solved",
-    "work_branch": "ws/backend/ui-regression"
-  },
-  "description": "A missing null check in a backend handler causes 500 errors under specific conditions.",
-  "symptoms": [
-    "500 errors on certain API endpoints",
-    "Nil pointer dereference in logs",
-    "CI tests failing"
-  ],
-  "fix_hints": [
-    "Check handler for nil pointer access",
-    "Add appropriate null checks",
-    "Run tests to verify fix"
-  ],
   "checks": {
-    "version": 1,
     "default_stage": "broken",
     "stages": {
       "broken": {
         "verify": [
           {
-            "type": "http.get",
             "description": "Health endpoint works (basic infra ok)",
-            "url": "http://ui-regression.localhost:8082/_health",
-            "expect": { "status": [200] }
+            "expect": {
+              "status": [
+                200
+              ]
+            },
+            "type": "http.get",
+            "url": "http://ui-regression.localhost:8082/_health"
           },
           {
-            "type": "playwright.run",
             "description": "UI shows error state",
-            "suite": "eng/ui-regression-broken"
+            "suite": "eng/ui-regression-broken",
+            "type": "playwright.run"
           }
         ]
       },
-      "fixed": {
+      "solved": {
         "verify": [
           {
-            "type": "http.get",
             "description": "Health endpoint works",
-            "url": "http://ui-regression.localhost:8082/_health",
-            "expect": { "status": [200] }
+            "expect": {
+              "status": [
+                200
+              ]
+            },
+            "type": "http.get",
+            "url": "http://ui-regression.localhost:8082/_health"
           },
           {
-            "type": "playwright.run",
             "description": "UI works correctly after fix",
-            "suite": "eng/ui-regression-fixed"
+            "suite": "eng/ui-regression-fixed",
+            "type": "playwright.run"
           }
         ]
       }
-    }
-  }
+    },
+    "version": 1
+  },
+  "description": "A missing null check in a backend handler causes 500 errors under specific conditions.",
+  "fix_hints": [
+    "Check handler for nil pointer access",
+    "Add appropriate null checks",
+    "Run tests to verify fix"
+  ],
+  "git": {
+    "base_ref": "486e97860f2f06726320eb5bc5d05735545d60e1",
+    "broken_patches_dir": "patches/broken",
+    "solved_patches_dir": "patches/solved",
+    "work_branch": "ws/backend/ui-regression"
+  },
+  "reset_strategy": "worktree-reset",
+  "seed": true,
+  "slug": "ui-regression",
+  "symptoms": [
+    "500 errors on certain API endpoints",
+    "Nil pointer dereference in logs",
+    "CI tests failing"
+  ],
+  "title": "UI Regression - Missing Null Check",
+  "track": "backend",
+  "type": "engineering",
+  "url_host": "ui-regression.localhost"
 }

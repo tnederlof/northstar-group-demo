@@ -9,6 +9,8 @@ import (
 
 	"github.com/northstar-group-demo/democtl/internal/checks"
 	"github.com/northstar-group-demo/democtl/internal/env"
+	"github.com/northstar-group-demo/democtl/internal/migrate"
+	"github.com/northstar-group-demo/democtl/internal/patchesvalidate"
 	"github.com/northstar-group-demo/democtl/internal/prereq"
 	"github.com/northstar-group-demo/democtl/internal/runtime"
 	"github.com/northstar-group-demo/democtl/internal/runtime/engineering"
@@ -45,11 +47,14 @@ It provides commands for setup, verification, scenario management, and checks ex
 		newDoctorCmd(),
 		newRunCmd(),
 		newResetCmd(),
-		newFixItCmd(),
+		newSolveCmd(),
+		newFixItCmd(), // Hidden alias for solve
 		newResetAllCmd(),
 		newListScenariosCmd(),
 		newDescribeScenarioCmd(),
 		newValidateScenariosCmd(),
+		newValidatePatchesCmd(),
+		newMigrateScenarioToPatchesCmd(),
 		newEnvCmd(),
 		newChecksCmd(),
 		newCompletionCmd(),
@@ -469,10 +474,10 @@ func newResetCmd() *cobra.Command {
 	return cmd
 }
 
-func newFixItCmd() *cobra.Command {
+func newSolveCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "fix-it <scenario>",
-		Short: "Fix a broken demo scenario",
+		Use:   "solve <scenario>",
+		Short: "Apply the solved state to a scenario",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			repoRoot, err := scenario.GetRepoRoot()
@@ -482,7 +487,7 @@ func newFixItCmd() *cobra.Command {
 			scenarioID := args[0]
 			typeStr, _ := cmd.Flags().GetString("type")
 
-			fmt.Printf("\033[0;36mApplying Fix-It for Scenario: %s\033[0m\n", scenarioID)
+			fmt.Printf("\033[0;36mApplying Solved State for Scenario: %s\033[0m\n", scenarioID)
 			fmt.Println("\033[0;36m" + strings.Repeat("=", 80) + "\033[0m")
 			fmt.Println()
 
@@ -498,12 +503,12 @@ func newFixItCmd() *cobra.Command {
 			}
 
 			if s.Manifest.Type == scenario.TypeSRE {
-				fmt.Println("\033[0;33m==>\033[0m Fix-it is not implemented for SRE scenarios")
+				fmt.Println("\033[0;33m==>\033[0m Solve is not implemented for SRE scenarios")
 				fmt.Println("\033[0;34m==>\033[0m SRE scenarios use kubectl apply to fix issues")
-				return fmt.Errorf("fix-it not supported for SRE scenarios")
+				return fmt.Errorf("solve not supported for SRE scenarios")
 			} else if s.Manifest.Type == scenario.TypeEngineering {
-				// Fix-it Engineering scenario
-				if err := engineering.FixItScenario(engineering.RuntimeOpts{
+				// Solve Engineering scenario
+				if err := engineering.SolveScenario(engineering.RuntimeOpts{
 					RepoRoot:      repoRoot,
 					HTTPPort:      engineering.DefaultHTTPPort,
 					DashboardPort: engineering.DefaultDashboardPort,
@@ -511,35 +516,43 @@ func newFixItCmd() *cobra.Command {
 					return err
 				}
 
-				// Run verification in fixed stage
+				// Run verification in solved stage
 				fmt.Println()
-				fmt.Println("\033[0;34m==>\033[0m Running verification checks for fixed state...")
+				fmt.Println("\033[0;34m==>\033[0m Running verification checks for solved state...")
 
 				runner := checks.NewRunner(checks.RunOpts{
 					Scenario:    s,
 					CheckType:   checks.CheckTypeVerify,
-					Stage:       "fixed",
+					Stage:       "solved",
 					KubeContext: sre.DefaultKubeContext,
 				})
 
 				_, err := runner.Run()
 				if err != nil {
-					fmt.Println("\033[0;33m==>\033[0m Fix-it verification failed (scenario may still be starting)")
+					fmt.Println("\033[0;33m==>\033[0m Solved verification failed (scenario may still be starting)")
 				} else {
-					fmt.Println("\033[0;32m==>\033[0m Fix-it verification passed")
+					fmt.Println("\033[0;32m==>\033[0m Solved verification passed")
 				}
 			} else {
 				return fmt.Errorf("unknown scenario type: %s", s.Manifest.Type)
 			}
 
 			fmt.Println()
-			fmt.Println("\033[0;32m==>\033[0m Fix-it complete!")
+			fmt.Println("\033[0;32m==>\033[0m Solve complete!")
 			fmt.Println()
 			fmt.Println("\033[0;34m==>\033[0m The scenario is now in the solved state")
 			return nil
 		},
 	}
 	cmd.Flags().String("type", "", "Override scenario type (sre|engineering) for disambiguation")
+	return cmd
+}
+
+func newFixItCmd() *cobra.Command {
+	cmd := newSolveCmd()
+	cmd.Use = "fix-it <scenario>"
+	cmd.Short = "(deprecated) Alias for 'solve'"
+	cmd.Hidden = true
 	return cmd
 }
 
@@ -788,6 +801,101 @@ func newValidateScenariosCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().Bool("strict", false, "Enable strict validation (fails on collisions)")
+	return cmd
+}
+
+func newValidatePatchesCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "validate-patches",
+		Short: "Validate engineering scenario patches",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			repoRoot, err := scenario.GetRepoRoot()
+			if err != nil {
+				return err
+			}
+
+			scenarioID, _ := cmd.Flags().GetString("scenario")
+			strict, _ := cmd.Flags().GetBool("strict")
+
+			fmt.Println("Validating engineering scenario patches...")
+			fmt.Println()
+
+			result, err := patchesvalidate.ValidateAll(repoRoot, scenarioID, strict)
+			if err != nil {
+				return err
+			}
+
+			// Print validation errors
+			for _, verr := range result.Errors {
+				fmt.Fprintf(os.Stderr, "  ERROR: %s\n", verr.Error())
+			}
+
+			fmt.Println()
+			if scenarioID != "" {
+				fmt.Printf("Validated patches for: %s\n", scenarioID)
+			} else {
+				fmt.Printf("Validated patches for: %d engineering scenario(s)\n", result.Total)
+			}
+
+			if result.HasErrors() {
+				fmt.Printf("Errors: %d\n", len(result.Errors))
+				return fmt.Errorf("patch validation failed with %d error(s)", len(result.Errors))
+			}
+
+			fmt.Println("All patches valid!")
+			return nil
+		},
+	}
+	cmd.Flags().String("scenario", "", "Validate patches for a specific scenario (track/slug)")
+	cmd.Flags().Bool("strict", false, "Enable strict validation (check base_ref is ancestor of HEAD)")
+	return cmd
+}
+
+func newMigrateScenarioToPatchesCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "migrate-scenario-to-patches <scenario>",
+		Short: "Migrate a tag-based scenario to patch-based workflow",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			repoRoot, err := scenario.GetRepoRoot()
+			if err != nil {
+				return err
+			}
+
+			scenarioID := args[0]
+			baseRef, _ := cmd.Flags().GetString("base")
+
+			fmt.Printf("\033[0;36mMigrating Scenario to Patches: %s\033[0m\n", scenarioID)
+			fmt.Println("\033[0;36m" + strings.Repeat("=", 80) + "\033[0m")
+
+			// Resolve scenario
+			s, err := scenario.Resolve(repoRoot, scenarioID, scenario.TypeEngineering)
+			if err != nil {
+				return fmt.Errorf("failed to load scenario: %w", err)
+			}
+
+			if s.Manifest.Type != scenario.TypeEngineering {
+				return fmt.Errorf("migration only applies to engineering scenarios")
+			}
+
+			// Perform migration
+			if err := migrate.MigrateScenarioToPatches(repoRoot, s, baseRef); err != nil {
+				return err
+			}
+
+			fmt.Println()
+			fmt.Println("\033[0;32m==>\033[0m Migration complete!")
+			fmt.Println()
+			fmt.Println("\033[0;34m==>\033[0m Next steps:")
+			fmt.Println("\033[0;34m==>\033[0m   1. Review the generated patches in the scenario directory")
+			fmt.Println("\033[0;34m==>\033[0m   2. Run 'democtl validate-scenarios --strict' to validate manifest")
+			fmt.Println("\033[0;34m==>\033[0m   3. Run 'democtl validate-patches --strict' to validate patches")
+			fmt.Println("\033[0;34m==>\033[0m   4. Test the scenario with 'democtl run %s'", scenarioID)
+
+			return nil
+		},
+	}
+	cmd.Flags().String("base", "", "Base commit SHA (defaults to parent of broken ref)")
 	return cmd
 }
 

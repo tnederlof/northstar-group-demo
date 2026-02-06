@@ -1,0 +1,38 @@
+From ec639efa02e2d36a2a97cfc7c1f2d8b890076436 Mon Sep 17 00:00:00 2001
+From: Trevor Nederlof <trevor.nederlof@hey.com>
+Date: Wed, 4 Feb 2026 17:41:43 -0500
+Subject: [PATCH] backend/ui-regression: introduce nil pointer bug in ListVotes
+
+Remove defensive nil check when accessing post result, causing
+nil pointer dereference when requesting votes for non-existent post.
+---
+ fider/app/handlers/apiv1/post.go | 12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/fider/app/handlers/apiv1/post.go b/fider/app/handlers/apiv1/post.go
+index 058be7f..7d09a5e 100644
+--- a/fider/app/handlers/apiv1/post.go
++++ b/fider/app/handlers/apiv1/post.go
+@@ -501,13 +501,13 @@ func ListVotes() web.HandlerFunc {
+ 			return c.NotFound()
+ 		}
+ 
+-		getPost := &query.GetPostByNumber{Number: number}
+-		if err := bus.Dispatch(c, getPost); err != nil {
+-			return c.Failure(err)
+-		}
++	getPost := &query.GetPostByNumber{Number: number}
++	if err := bus.Dispatch(c, getPost); err != nil {
++		return c.Failure(err)
++	}
+ 
+-		includeEmail := c.User() != nil && c.User().IsCollaborator()
+-		listVotes := &query.ListPostVotes{PostID: getPost.Result.ID, IncludeEmail: includeEmail}
++	includeEmail := c.User() != nil && c.User().IsCollaborator()
++	listVotes := &query.ListPostVotes{PostID: getPost.Result.ID, IncludeEmail: includeEmail}
+ 		if err := bus.Dispatch(c, listVotes); err != nil {
+ 			return c.Failure(err)
+ 		}
+-- 
+2.50.1 (Apple Git-155)
+

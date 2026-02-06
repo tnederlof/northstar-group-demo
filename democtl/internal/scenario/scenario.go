@@ -26,10 +26,31 @@ const (
 
 // GitConfig contains git-related configuration for engineering scenarios
 type GitConfig struct {
-	MaintenanceBranch string `json:"maintenance_branch"`
-	BrokenRef         string `json:"broken_ref"`
-	SolvedRef         string `json:"solved_ref"`
+	BaseRef           string `json:"base_ref"`
+	BrokenPatchesDir  string `json:"broken_patches_dir,omitempty"`
+	SolvedPatchesDir  string `json:"solved_patches_dir,omitempty"`
 	WorkBranch        string `json:"work_branch"`
+	
+	// Legacy fields (for migration only)
+	MaintenanceBranch string `json:"maintenance_branch,omitempty"`
+	BrokenRef         string `json:"broken_ref,omitempty"`
+	SolvedRef         string `json:"solved_ref,omitempty"`
+}
+
+// GetBrokenPatchesDir returns the broken patches directory path (with default)
+func (g *GitConfig) GetBrokenPatchesDir() string {
+	if g.BrokenPatchesDir == "" {
+		return "patches/broken"
+	}
+	return g.BrokenPatchesDir
+}
+
+// GetSolvedPatchesDir returns the solved patches directory path (with default)
+func (g *GitConfig) GetSolvedPatchesDir() string {
+	if g.SolvedPatchesDir == "" {
+		return "patches/solved"
+	}
+	return g.SolvedPatchesDir
 }
 
 // HTTPExpect defines expectations for HTTP checks

@@ -23,21 +23,27 @@ Required keys in `scenario.json`:
 - `reset_strategy` - how to reset the scenario
 
 Engineering scenarios also require:
-- `git.maintenance_branch` - mutable branch for updates (e.g., `scenario/backend/ui-regression`)
-- `git.broken_ref` - stable tag for broken baseline (e.g., `scenario/backend/ui-regression/broken`)
-- `git.solved_ref` - stable tag for solved baseline (e.g., `scenario/backend/ui-regression/solved`)
+- `git.base_ref` - pinned commit SHA (40 characters)
+- `git.broken_patches_dir` - directory containing broken state patches (default: `patches/broken`)
+- `git.solved_patches_dir` - directory containing solved state patches (default: `patches/solved`)
 - `git.work_branch` - local branch for workshop commits (e.g., `ws/backend/ui-regression`)
 
 ## Scenario Maintenance
 
-When `main` changes (infrastructure updates, scenario additions/removals), rebase scenarios:
+When the `fider/` codebase changes significantly, scenarios may need rebasing:
 
 ```bash
-git checkout scenario/<track>/<slug> && git rebase main
-git tag -f -a scenario/<track>/<slug>/broken HEAD~1 -m "broken baseline"
-git tag -f -a scenario/<track>/<slug>/solved HEAD -m "solved baseline"
-git push origin scenario/<track>/<slug> --force-with-lease
-git push origin --tags --force
+# Use migration/rebase tools
+democtl rebase-scenario-patches --to <new_base_ref> --all
+
+# Or manually re-record patches on new base
+# See AGENTS.md in repo root for detailed steps
+```
+
+After updates, validate:
+```bash
+democtl validate-scenarios --strict
+democtl validate-patches
 ```
 
 ## Common Tasks

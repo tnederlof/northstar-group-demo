@@ -10,7 +10,7 @@ import (
 	"github.com/northstar-group-demo/democtl/internal/scenario"
 )
 
-// WorktreeInit creates a git worktree from the broken baseline tag
+// WorktreeInit creates a git worktree from the base ref and applies broken patches
 func WorktreeInit(repoRoot string, s *scenario.Scenario) error {
 	worktreeDir := filepath.Join(s.Dir, "worktree")
 	
@@ -20,32 +20,67 @@ func WorktreeInit(repoRoot string, s *scenario.Scenario) error {
 		return nil
 	}
 	
-	// Get git refs from manifest
-	brokenRef := s.Manifest.Git.BrokenRef
+	// Get git config from manifest
+	baseRef := s.Manifest.Git.BaseRef
 	workBranch := s.Manifest.Git.WorkBranch
 	
-	if brokenRef == "" || workBranch == "" {
-		return fmt.Errorf("scenario manifest missing git.broken_ref or git.work_branch")
+	if baseRef == "" || workBranch == "" {
+		return fmt.Errorf("scenario manifest missing git.base_ref or git.work_branch")
 	}
 	
 	fmt.Printf("Creating worktree for scenario: %s\n", s.Identifier)
-	fmt.Printf("  Broken ref: %s\n", brokenRef)
+	fmt.Printf("  Base ref: %s\n", baseRef)
 	fmt.Printf("  Workshop branch: %s\n", workBranch)
 	fmt.Printf("  Path: %s\n", worktreeDir)
 	
-	// Fetch refs from origin
-	if err := fetchGitRefs(repoRoot); err != nil {
-		return fmt.Errorf("failed to fetch refs: %w", err)
+	// Best-effort fetch and prune
+	fmt.Println("Fetching refs from origin...")
+	cmd := exec.Command("git", "fetch", "origin", "--tags")
+	cmd.Dir = repoRoot
+	if err := cmd.Run(); err != nil {
+		fmt.Fprintf(os.Stderr, "Warning: git fetch failed: %v\n", err)
 	}
 	
-	// Create worktree on local workshop branch starting from broken tag
-	cmd := exec.Command("git", "worktree", "add", "-b", workBranch, worktreeDir, brokenRef)
+	cmd = exec.Command("git", "worktree", "prune")
+	cmd.Dir = repoRoot
+	_ = cmd.Run() // ignore errors
+	
+	// Validate base commit exists locally
+	cmd = exec.Command("git", "cat-file", "-e", baseRef+"^{commit}")
+	cmd.Dir = repoRoot
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("base commit %s not found in local repository", baseRef)
+	}
+	
+	// Create worktree at base commit (no branch creation yet)
+	cmd = exec.Command("git", "worktree", "add", worktreeDir, baseRef)
 	cmd.Dir = repoRoot
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to create worktree: %w", err)
+	}
+	
+	// In the worktree, force-create/reset the workshop branch to base
+	cmd = exec.Command("git", "switch", "-C", workBranch, baseRef)
+	cmd.Dir = worktreeDir
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to create workshop branch: %w", err)
+	}
+	
+	// Apply broken patches
+	brokenPatchesDir := s.Manifest.Git.GetBrokenPatchesDir()
+	brokenPatches, err := listPatchFiles(s, brokenPatchesDir)
+	if err != nil {
+		return fmt.Errorf("failed to list broken patches: %w", err)
+	}
+	
+	if len(brokenPatches) > 0 {
+		fmt.Printf("Applying %d broken patch(es)...\n", len(brokenPatches))
+		if err := applyPatchSeries(worktreeDir, brokenPatches, false); err != nil {
+			return fmt.Errorf("failed to apply broken patches for %s: %w", s.Identifier, err)
+		}
 	}
 	
 	fmt.Println()
@@ -55,50 +90,96 @@ func WorktreeInit(repoRoot string, s *scenario.Scenario) error {
 	return nil
 }
 
-// WorktreeResetToBroken resets worktree to the broken baseline
-func WorktreeResetToBroken(repoRoot string, s *scenario.Scenario, force bool) error {
+// ResetWorktreeToStage resets worktree to a specific stage (broken or solved) by applying patches
+// This is intentionally destructive - it discards all uncommitted/untracked changes
+func ResetWorktreeToStage(repoRoot string, s *scenario.Scenario, stage string) error {
 	worktreeDir := filepath.Join(s.Dir, "worktree")
 	
 	if _, err := os.Stat(worktreeDir); err != nil {
 		return fmt.Errorf("worktree does not exist, use init first")
 	}
 	
-	brokenRef := s.Manifest.Git.BrokenRef
-	if brokenRef == "" {
-		return fmt.Errorf("scenario manifest missing git.broken_ref")
+	baseRef := s.Manifest.Git.BaseRef
+	workBranch := s.Manifest.Git.WorkBranch
+	
+	if baseRef == "" || workBranch == "" {
+		return fmt.Errorf("scenario manifest missing git.base_ref or git.work_branch")
 	}
 	
-	return resetWorktreeToRef(repoRoot, worktreeDir, brokenRef, "broken baseline", force)
-}
-
-// WorktreeResetToSolved resets worktree to the solved baseline (fix-it)
-func WorktreeResetToSolved(repoRoot string, s *scenario.Scenario, force bool) error {
-	worktreeDir := filepath.Join(s.Dir, "worktree")
+	fmt.Printf("Resetting worktree to %s stage...\n", stage)
 	
-	if _, err := os.Stat(worktreeDir); err != nil {
-		return fmt.Errorf("worktree does not exist, use init first")
+	// Best-effort cleanup of any in-progress git am
+	_ = abortAmIfInProgress(worktreeDir)
+	
+	// Hard reset to base ref
+	cmd := exec.Command("git", "reset", "--hard", baseRef)
+	cmd.Dir = worktreeDir
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to reset to base: %w", err)
 	}
 	
-	solvedRef := s.Manifest.Git.SolvedRef
-	if solvedRef == "" {
-		return fmt.Errorf("scenario manifest missing git.solved_ref")
+	// Clean untracked files and directories
+	cmd = exec.Command("git", "clean", "-fdx")
+	cmd.Dir = worktreeDir
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to clean worktree: %w", err)
 	}
 	
-	// Create backup branch if there are uncommitted changes
-	if !force {
-		if hasUncommittedChanges(worktreeDir) {
-			backupBranch := fmt.Sprintf("ws/backup-%d", os.Getpid())
-			fmt.Printf("Creating backup branch: %s\n", backupBranch)
-			
-			cmd := exec.Command("git", "branch", backupBranch, "HEAD")
-			cmd.Dir = worktreeDir
-			if err := cmd.Run(); err != nil {
-				fmt.Fprintf(os.Stderr, "Warning: failed to create backup branch: %v\n", err)
-			}
+	// Ensure branch is aligned with base
+	cmd = exec.Command("git", "switch", "-C", workBranch, baseRef)
+	cmd.Dir = worktreeDir
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to reset workshop branch: %w", err)
+	}
+	
+	// Apply stage-specific patches
+	var patchesDir string
+	if stage == "broken" {
+		patchesDir = s.Manifest.Git.GetBrokenPatchesDir()
+	} else if stage == "solved" {
+		patchesDir = s.Manifest.Git.GetSolvedPatchesDir()
+	} else {
+		return fmt.Errorf("unknown stage: %s", stage)
+	}
+	
+	patches, err := listPatchFiles(s, patchesDir)
+	if err != nil {
+		return fmt.Errorf("failed to list patches for %s stage: %w", stage, err)
+	}
+	
+	if len(patches) > 0 {
+		fmt.Printf("Applying %d patch(es) for %s stage...\n", len(patches), stage)
+		if err := applyPatchSeries(worktreeDir, patches, false); err != nil {
+			return fmt.Errorf("failed to apply %s patches for %s: %w", stage, s.Identifier, err)
 		}
 	}
 	
-	return resetWorktreeToRef(repoRoot, worktreeDir, solvedRef, "solved baseline", force)
+	// Verify worktree is clean
+	cmd = exec.Command("git", "status", "--porcelain")
+	cmd.Dir = worktreeDir
+	output, err := cmd.Output()
+	if err != nil {
+		return fmt.Errorf("failed to check worktree status: %w", err)
+	}
+	
+	if len(strings.TrimSpace(string(output))) > 0 {
+		return fmt.Errorf("worktree is not clean after applying %s patches", stage)
+	}
+	
+	fmt.Println()
+	fmt.Printf("Worktree reset to %s stage successfully\n", stage)
+	
+	return nil
+}
+
+// WorktreeResetToBroken resets worktree to the broken stage
+func WorktreeResetToBroken(repoRoot string, s *scenario.Scenario, force bool) error {
+	return ResetWorktreeToStage(repoRoot, s, "broken")
+}
+
+// WorktreeResetToSolved resets worktree to the solved stage
+func WorktreeResetToSolved(repoRoot string, s *scenario.Scenario, force bool) error {
+	return ResetWorktreeToStage(repoRoot, s, "solved")
 }
 
 // WorktreeRemove removes and prunes a worktree

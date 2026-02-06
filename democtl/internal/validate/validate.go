@@ -152,6 +152,13 @@ func ValidateScenario(s *scenario.Scenario, repoRoot string) []ValidationError {
 	if checksErrs := validateChecks(s, relPath); len(checksErrs) > 0 {
 		errors = append(errors, checksErrs...)
 	}
+	
+	// Validate engineering-specific git config
+	if s.Manifest.Type == scenario.TypeEngineering {
+		if gitErrs := validateEngineeringGitConfig(s, relPath); len(gitErrs) > 0 {
+			errors = append(errors, gitErrs...)
+		}
+	}
 
 	return errors
 }
@@ -214,6 +221,103 @@ func validateChecks(s *scenario.Scenario, relPath string) []ValidationError {
 	}
 
 	return errors
+}
+
+// validateEngineeringGitConfig validates git config for engineering scenarios
+func validateEngineeringGitConfig(s *scenario.Scenario, relPath string) []ValidationError {
+	var errors []ValidationError
+	
+	if s.Manifest.Git == nil {
+		errors = append(errors, ValidationError{
+			ScenarioPath: relPath,
+			Field:        "git",
+			Message:      "git config required for engineering scenarios",
+		})
+		return errors
+	}
+	
+	// Validate base_ref is present
+	if s.Manifest.Git.BaseRef == "" {
+		errors = append(errors, ValidationError{
+			ScenarioPath: relPath,
+			Field:        "git.base_ref",
+			Message:      "missing required field",
+		})
+	} else {
+		// Validate base_ref is a full 40-character SHA
+		if len(s.Manifest.Git.BaseRef) != 40 {
+			errors = append(errors, ValidationError{
+				ScenarioPath: relPath,
+				Field:        "git.base_ref",
+				Message:      fmt.Sprintf("must be a full 40-character commit SHA, got %d characters", len(s.Manifest.Git.BaseRef)),
+			})
+		} else {
+			// Validate it's hexadecimal
+			for _, c := range s.Manifest.Git.BaseRef {
+				if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+					errors = append(errors, ValidationError{
+						ScenarioPath: relPath,
+						Field:        "git.base_ref",
+						Message:      "must be a valid hexadecimal SHA",
+					})
+					break
+				}
+			}
+		}
+	}
+	
+	// Validate work_branch is present
+	if s.Manifest.Git.WorkBranch == "" {
+		errors = append(errors, ValidationError{
+			ScenarioPath: relPath,
+			Field:        "git.work_branch",
+			Message:      "missing required field",
+		})
+	}
+	
+	// Validate patch dir strings are safe relative paths (no absolute paths, no .. traversal)
+	if s.Manifest.Git.BrokenPatchesDir != "" {
+		if err := validatePatchDirPath(s.Manifest.Git.BrokenPatchesDir); err != nil {
+			errors = append(errors, ValidationError{
+				ScenarioPath: relPath,
+				Field:        "git.broken_patches_dir",
+				Message:      err.Error(),
+			})
+		}
+	}
+	
+	if s.Manifest.Git.SolvedPatchesDir != "" {
+		if err := validatePatchDirPath(s.Manifest.Git.SolvedPatchesDir); err != nil {
+			errors = append(errors, ValidationError{
+				ScenarioPath: relPath,
+				Field:        "git.solved_patches_dir",
+				Message:      err.Error(),
+			})
+		}
+	}
+	
+	return errors
+}
+
+// validatePatchDirPath validates that a patch directory path is safe
+func validatePatchDirPath(path string) error {
+	// Must not be absolute
+	if filepath.IsAbs(path) {
+		return fmt.Errorf("must be a relative path, not absolute")
+	}
+	
+	// Must not contain ..
+	if strings.Contains(path, "..") {
+		return fmt.Errorf("must not contain '..' (parent directory references)")
+	}
+	
+	// Clean the path and ensure it doesn't try to escape
+	cleaned := filepath.Clean(path)
+	if strings.HasPrefix(cleaned, "..") {
+		return fmt.Errorf("path would escape scenario directory")
+	}
+	
+	return nil
 }
 
 // getRelativePath returns the path relative to the demo directory

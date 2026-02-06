@@ -22,6 +22,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -51,6 +53,11 @@ jobs:
       - name: Validate scenario manifests
         run: |
           ./bin/democtl validate-scenarios --strict
+        continue-on-error: false
+      
+      - name: Validate engineering scenario patches
+        run: |
+          ./bin/democtl validate-patches
         continue-on-error: false
       
       - name: Validate Docker Compose files

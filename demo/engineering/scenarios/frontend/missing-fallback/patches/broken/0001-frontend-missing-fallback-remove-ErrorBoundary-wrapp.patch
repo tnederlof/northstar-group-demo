@@ -1,0 +1,41 @@
+From 9508927a8acb270dba2ff4fb80f050c22afd9354 Mon Sep 17 00:00:00 2001
+From: Trevor Nederlof <trevor.nederlof@hey.com>
+Date: Wed, 4 Feb 2026 17:43:20 -0500
+Subject: [PATCH] frontend/missing-fallback: remove ErrorBoundary wrapper
+
+Remove ErrorBoundary from app root, causing React errors to crash
+the entire UI instead of showing a graceful error state.
+---
+ fider/public/index.tsx | 16 +++++++---------
+ 1 file changed, 7 insertions(+), 9 deletions(-)
+
+diff --git a/fider/public/index.tsx b/fider/public/index.tsx
+index 2aa2b07..95192f0 100644
+--- a/fider/public/index.tsx
++++ b/fider/public/index.tsx
+@@ -48,15 +48,13 @@ const bootstrapApp = (i18n: I18n) => {
+     const root = createRoot(rootElement)
+     root.render(
+       <React.StrictMode>
+-        <ErrorBoundary onError={logProductionError}>
+-          <I18nProvider i18n={i18n}>
+-            <FiderContext.Provider value={fider}>
+-              <DevBanner />
+-              <ReadOnlyNotice />
+-              <Suspense fallback={<Loading />}>{React.createElement(component, fider.session.props)}</Suspense>
+-            </FiderContext.Provider>
+-          </I18nProvider>
+-        </ErrorBoundary>
++        <I18nProvider i18n={i18n}>
++          <FiderContext.Provider value={fider}>
++            <DevBanner />
++            <ReadOnlyNotice />
++            <Suspense fallback={<Loading />}>{React.createElement(component, fider.session.props)}</Suspense>
++          </FiderContext.Provider>
++        </I18nProvider>
+       </React.StrictMode>
+     )
+   }
+-- 
+2.50.1 (Apple Git-155)
+
