@@ -177,6 +177,11 @@ func DeployScenario(opts RuntimeOpts, scenarioDir string, namespace string, need
 		return err
 	}
 	
+	// Run migrations
+	if err := RunMigrations(opts, namespace); err != nil {
+		return fmt.Errorf("failed to run migrations: %w", err)
+	}
+	
 	// Apply seed data if needed
 	if needsSeed {
 		if err := ApplySeed(opts, namespace); err != nil {
@@ -187,10 +192,10 @@ func DeployScenario(opts RuntimeOpts, scenarioDir string, namespace string, need
 	return nil
 }
 
-// ApplySeed applies seed data to the postgres database in a scenario
-func ApplySeed(opts RuntimeOpts, namespace string) error {
+// RunMigrations runs database migrations using a one-off fider pod
+func RunMigrations(opts RuntimeOpts, namespace string) error {
 	fmt.Println()
-	fmt.Println("\033[0;34m==>\033[0m Applying seed data...")
+	fmt.Println("\033[0;34m==>\033[0m Running database migrations...")
 	
 	// Wait for postgres deployment to be available
 	fmt.Println("Waiting for postgres to be ready...")
@@ -242,6 +247,57 @@ func ApplySeed(opts RuntimeOpts, namespace string) error {
 		}
 		time.Sleep(time.Second)
 	}
+	
+	// Run migrations in a one-off pod
+	fmt.Println("Running fider migrate...")
+	if err := execx.Run("kubectl", []string{
+		"--context=" + opts.KubeContext,
+		"-n", namespace,
+		"run", "fider-migrate",
+		"--image=ghcr.io/tnederlof/northstar-group-demo:base",
+		"--restart=Never",
+		"--rm",
+		"--attach",
+		"--env=DATABASE_URL=postgres://fider:fider@postgres:5432/fider?sslmode=disable",
+		"--env=JWT_SECRET=northstar-demo-jwt-secret-not-for-production",
+		"--env=EMAIL=none",
+		"--env=EMAIL_NOREPLY=noreply@northstar.io",
+		"--env=HOST_MODE=single",
+		"--env=BASE_URL=http://localhost:8080",
+		"--command",
+		"--",
+		"./fider", "migrate",
+	}, execx.RunOpts{
+		Dir: opts.RepoRoot,
+	}); err != nil {
+		return fmt.Errorf("migration failed: %w", err)
+	}
+	
+	fmt.Println("\033[0;32m==>\033[0m Migrations completed successfully!")
+	return nil
+}
+
+// ApplySeed applies seed data to the postgres database in a scenario
+// Assumes migrations have already been run by RunMigrations
+func ApplySeed(opts RuntimeOpts, namespace string) error {
+	fmt.Println()
+	fmt.Println("\033[0;34m==>\033[0m Applying seed data...")
+	
+	// Find the postgres pod
+	fmt.Println("Finding postgres pod...")
+	cmd := exec.Command("kubectl",
+		"--context="+opts.KubeContext,
+		"-n", namespace,
+		"get", "pods",
+		"-l", "app=postgres",
+		"-o", "jsonpath={.items[0].metadata.name}",
+	)
+	output, err := cmd.Output()
+	if err != nil || len(output) == 0 {
+		return fmt.Errorf("could not find postgres pod in namespace %s", namespace)
+	}
+	postgresPod := strings.TrimSpace(string(output))
+	fmt.Printf("Found postgres pod: %s\n", postgresPod)
 	
 	// Copy seed file to pod
 	seedFile := filepath.Join(opts.RepoRoot, "demo", "shared", "northstar", "seed.sql")
