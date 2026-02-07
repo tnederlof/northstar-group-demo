@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/northstar-group-demo/democtl/internal/env"
 	"github.com/northstar-group-demo/democtl/internal/execx"
@@ -187,9 +188,9 @@ func ApplySeed(opts RuntimeOpts, s *scenario.Scenario) error {
 	fmt.Println()
 	fmt.Println("\033[0;34m==>\033[0m Applying seed data...")
 	
-	// Get the compose project name (northstar-<slug>)
+	// Get the container name (northstar-<slug>-postgres)
 	_, slug, _ := scenario.ParseIdentifier(s.Identifier)
-	project := fmt.Sprintf("northstar-%s", slug)
+	container := fmt.Sprintf("northstar-%s-postgres", slug)
 	
 	// Seed file path
 	seedFile := filepath.Join(opts.RepoRoot, "demo", "shared", "northstar", "seed.sql")
@@ -197,7 +198,23 @@ func ApplySeed(opts RuntimeOpts, s *scenario.Scenario) error {
 		return fmt.Errorf("seed file not found: %s", seedFile)
 	}
 	
-	fmt.Printf("Using Compose project: %s\n", project)
+	fmt.Printf("Using container: %s\n", container)
+	
+	// Wait for postgres to accept connections
+	fmt.Println("Waiting for postgres to accept connections...")
+	for i := 0; i < 30; i++ {
+		checkCmd := exec.Command("docker", "exec", container,
+			"pg_isready", "-U", "fider", "-d", "fider")
+		if err := checkCmd.Run(); err == nil {
+			fmt.Println("Postgres is ready!")
+			break
+		}
+		if i == 29 {
+			return fmt.Errorf("postgres did not become ready in time")
+		}
+		time.Sleep(time.Second)
+	}
+	
 	fmt.Println("Executing seed.sql...")
 	
 	// Open seed file for reading
@@ -206,8 +223,9 @@ func ApplySeed(opts RuntimeOpts, s *scenario.Scenario) error {
 		return fmt.Errorf("failed to read seed file: %w", err)
 	}
 	
-	// Execute seed data via docker compose exec
-	cmd := exec.Command("docker", "compose", "-p", project, "exec", "-T", "postgres",
+	// Execute seed data via direct docker exec (not compose exec)
+	// This works even if the compose service isn't fully "ready" yet
+	cmd := exec.Command("docker", "exec", "-i", container,
 		"psql", "-U", "fider", "-d", "fider")
 	cmd.Dir = s.Dir
 	cmd.Stdin = strings.NewReader(string(seedData))
