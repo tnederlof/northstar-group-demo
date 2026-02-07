@@ -442,16 +442,17 @@ func newResetCmd() *cobra.Command {
 				return fmt.Errorf("failed to load scenario: %w", err)
 			}
 
-			if s.Manifest.Type == scenario.TypeSRE {
-				// Reset SRE scenario (delete namespace)
-				// Extract namespace from scenario (typically same as slug)
-				_, slug, _ := scenario.ParseIdentifier(s.Identifier)
-				if err := sre.ResetScenario(sre.RuntimeOpts{
-					RepoRoot:    repoRoot,
-					KubeContext: sre.DefaultKubeContext,
-				}, slug); err != nil {
-					return err
-				}
+		if s.Manifest.Type == scenario.TypeSRE {
+			// Reset SRE scenario (delete namespace)
+			// Extract namespace from scenario (demo-<slug>)
+			_, slug, _ := scenario.ParseIdentifier(s.Identifier)
+			namespace := fmt.Sprintf("demo-%s", slug)
+			if err := sre.ResetScenario(sre.RuntimeOpts{
+				RepoRoot:    repoRoot,
+				KubeContext: sre.DefaultKubeContext,
+			}, namespace); err != nil {
+				return err
+			}
 			} else if s.Manifest.Type == scenario.TypeEngineering {
 				// Reset Engineering scenario
 				if err := engineering.ResetScenario(engineering.RuntimeOpts{

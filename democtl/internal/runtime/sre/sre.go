@@ -119,8 +119,6 @@ func EnsureGateway(opts RuntimeOpts) error {
 		"--namespace", "envoy-gateway-system",
 		"--create-namespace",
 		"--skip-crds",
-		"--wait",
-		"--timeout", "5m",
 	}
 	
 	if err := execx.Run("helm", helmArgs, execx.RunOpts{
@@ -138,6 +136,19 @@ func EnsureGateway(opts RuntimeOpts) error {
 		Dir: opts.RepoRoot,
 	}); err != nil {
 		return fmt.Errorf("failed to apply Gateway resources: %w", err)
+	}
+	
+	// Wait for Envoy Gateway to be ready
+	fmt.Println("\033[0;34m==>\033[0m Waiting for Envoy Gateway to be ready...")
+	for i := 0; i < 60; i++ {
+		if GatewayReady(opts.KubeContext) {
+			fmt.Println("\033[0;32m==>\033[0m Envoy Gateway is ready")
+			return nil
+		}
+		if i == 59 {
+			return fmt.Errorf("envoy gateway did not become ready within 60 seconds")
+		}
+		time.Sleep(time.Second)
 	}
 	
 	return nil
